@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Super Quizz — Jeu Twitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F1A; --panel:#131A2B; --panel-2:#1B2338; --border:#26304A;
+    --gold:#D4A537; --gold-soft:#E8C468; --green:#3FA34D; --red:#C1443C;
+    --text:#F2EFE6; --text-dim:#9AA3B8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .display{font-family:'Bebas Neue',sans-serif;letter-spacing:.02em;}
+
+  /* ---------- CONTROL PANEL ---------- */
+  #control-view{max-width:1200px;margin:0 auto;padding:28px 20px 80px;}
+  .header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .title{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold-soft);letter-spacing:.03em;margin:0;}
+  .subtitle{color:var(--text-dim);font-size:13px;margin-top:2px;}
+  .btn{background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:10px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:border-color .15s, transform .05s;}
+  .btn:hover{border-color:var(--gold);}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn-gold{background:var(--gold);color:#1a1305;border-color:var(--gold);}
+  .btn-gold:hover{background:var(--gold-soft);}
+  .btn-red{background:transparent;color:var(--red);border-color:var(--red);}
+  .btn-red:hover{background:rgba(193,68,60,.12);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:880px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:18px;}
+  .card h2{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold-soft);letter-spacing:.03em;margin:0 0 12px;}
+  .card h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin:14px 0 6px;}
+  label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px;}
+  input[type=text], input[type=number], textarea{
+    width:100%;background:#0E1524;border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:9px 10px;font-family:inherit;font-size:14px;
+  }
+  textarea{min-height:120px;resize:vertical;font-family:ui-monospace,monospace;font-size:12.5px;line-height:1.5;}
+  .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
+  .row > div{flex:1;min-width:120px;}
+  .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;background:var(--red);}
+  .status-dot.on{background:var(--green);}
+  .status-line{font-size:13px;color:var(--text-dim);display:flex;align-items:center;margin-top:8px;}
+  .pill{display:inline-block;background:var(--panel-2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12.5px;margin:3px 4px 0 0;}
+  .pill.wrong{border-color:var(--red);color:#ff9d95;}
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .stat{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:100px;}
+  .stat .num{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold-soft);}
+  .stat .lbl{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
+  .phase-badge{display:inline-block;background:var(--panel-2);border:1px solid var(--gold);color:var(--gold-soft);font-size:12px;padding:4px 11px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  .log{background:#0E1524;border:1px solid var(--border);border-radius:6px;padding:8px 10px;height:170px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:12px;color:var(--text-dim);}
+  .log div{padding:2px 0;border-bottom:1px solid #1a2236;}
+  .log .go{color:var(--gold-soft);}
+  .log .ans{color:#8fb9ff;}
+  .help{font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-top:6px;}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+  .q-current{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:6px;font-size:14px;}
+  .q-current b{color:var(--gold-soft);}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .lb-row:last-child{border-bottom:none;}
+  .lb-rank{color:var(--gold-soft);font-family:'Bebas Neue',sans-serif;font-size:16px;width:22px;}
+  .lb-name{flex:1;}
+  .lb-score{color:var(--text-dim);font-weight:600;}
+  .cat-remove{cursor:pointer;color:var(--red);margin-left:5px;font-weight:700;}
+  .cat-remove:hover{text-decoration:underline;}
+  .cat-block{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;}
+  .cat-block-header{display:flex;gap:10px;align-items:center;margin-bottom:8px;}
+  .cat-block-header input{flex:1;font-weight:600;}
+  .cat-block textarea{min-height:90px;}
+
+  /* ---------- BROADCAST VIEW ---------- */
+  #broadcast-view{background:radial-gradient(ellipse at 50% 0%, #16203a 0%, #0B0F1A 60%);color:var(--text);
+    width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+  #stage{width:100%;max-width:1400px;padding:40px;text-align:center;}
+  .eyebrow{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:.15em;margin-bottom:10px;}
+  .waiting{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--text-dim);}
+  .count-big{font-family:'Bebas Neue',sans-serif;font-size:180px;line-height:1;color:var(--gold-soft);text-shadow:0 0 60px rgba(212,165,55,.35);}
+  .cta{font-family:'Bebas Neue',sans-serif;font-size:34px;margin-top:6px;}
+  .cta .go{color:var(--gold-soft);}
+  .joined-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:1100px;margin:26px auto 10px;}
+  .chip{background:var(--panel);border:1px solid var(--gold);color:var(--gold-soft);padding:8px 16px;border-radius:24px;font-size:16px;font-weight:600;}
+  .joined-count{color:var(--text-dim);font-size:16px;margin-top:6px;}
+  .q-index{font-family:'Bebas Neue',sans-serif;color:var(--gold);letter-spacing:.1em;font-size:20px;}
+  .turn-banner{font-size:22px;color:var(--text-dim);margin-top:6px;}
+  .turn-banner span{color:var(--gold-soft);font-weight:700;text-shadow:0 0 10px rgba(212,165,55,.4);}
+  .q-text{font-size:44px;font-weight:800;max-width:1100px;margin:18px auto;line-height:1.25;}
+  .timer-bar{width:600px;max-width:80%;height:10px;background:var(--panel-2);border-radius:6px;margin:20px auto 8px;overflow:hidden;}
+  .timer-fill{height:100%;background:var(--gold);transition:width 1s linear;}
+  .timer-num{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--gold-soft);}
+  .alive-count{color:var(--text-dim);margin-top:14px;font-size:16px;}
+  .answer-reveal{font-family:'Bebas Neue',sans-serif;font-size:36px;margin-top:22px;}
+  .answer-reveal span{color:var(--green);}
+  .lives-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:1100px;margin:24px auto 0;}
+  .life-chip{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:opacity .5s, filter .5s;}
+  .life-chip.eliminated{opacity:.35;filter:grayscale(1);border-color:var(--red);}
+  .life-name{font-size:15px;font-weight:700;}
+  .life-hearts{font-size:17px;letter-spacing:2px;}
+  .heart{display:inline-block;}
+  .heart-pop{animation:heartPop .55s ease;}
+  @keyframes heartPop{0%{transform:scale(1.8);opacity:1;}55%{transform:scale(.3);opacity:.5;}100%{transform:scale(1);opacity:1;}}
+  .heart-gain{animation:heartGain .6s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes heartGain{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.4);opacity:1;}100%{transform:scale(1);opacity:1;}}
+  .winner-name{font-family:'Bebas Neue',sans-serif;font-size:120px;color:var(--gold-soft);text-shadow:0 0 70px rgba(212,165,55,.45);margin-top:8px;word-break:break-word;animation:winnerPop .7s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes winnerPop{0%{opacity:0;transform:scale(.6);}60%{opacity:1;transform:scale(1.08);}100%{transform:scale(1);}}
+  #confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:5;}
+  .confetti-piece{position:absolute;top:-20px;opacity:.95;border-radius:2px;animation-name:confettiFall;animation-timing-function:cubic-bezier(.4,0,.2,1);animation-fill-mode:forwards;}
+  @keyframes confettiFall{to{transform:translateY(115vh) rotate(600deg);opacity:0;}}
+  .prev-winner{font-size:20px;color:var(--text-dim);margin-bottom:18px;}
+  .prev-winner span{color:var(--gold-soft);font-weight:700;}
+  .champion-text{color:#ffb43d;text-shadow:0 0 8px rgba(255,150,0,.85),0 0 18px rgba(255,60,0,.55);animation:flameFlicker 1.1s ease-in-out infinite alternate;}
+  .chip.champion, .life-chip.champion{border-color:#ff7a00;color:#ffb43d;text-shadow:0 0 8px rgba(255,150,0,.85),0 0 16px rgba(255,60,0,.5);animation:flameFlicker 1.1s ease-in-out infinite alternate;}
+  .life-chip.champion .life-name{color:#ffb43d;}
+  @keyframes flameFlicker{0%{text-shadow:0 0 6px rgba(255,170,0,.75),0 0 12px rgba(255,80,0,.45);}100%{text-shadow:0 0 13px rgba(255,200,0,1),0 0 26px rgba(255,60,0,.85);}}
+  .waiting-mini{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--text-dim);margin:22px 0;letter-spacing:.03em;}
+  .vote-options{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:28px auto 18px;}
+  .vote-option{background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:22px 32px;min-width:170px;}
+  .vote-key{display:block;font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold-soft);}
+  .vote-kw{display:block;font-size:19px;margin-top:6px;text-transform:capitalize;}
+  .roulette-track{position:relative;width:520px;max-width:90%;height:80px;margin:30px auto;overflow:hidden;border-radius:10px;background:var(--panel);border:1px solid var(--border);}
+  .roulette-pointer{position:absolute;left:50%;top:-6px;bottom:-6px;width:3px;background:var(--gold-soft);transform:translateX(-50%);z-index:2;box-shadow:0 0 8px rgba(212,165,55,.8);}
+  .roulette-pointer::before,.roulette-pointer::after{content:'';position:absolute;left:50%;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;}
+  .roulette-pointer::before{top:-6px;border-top:9px solid var(--gold-soft);transform:translateX(-50%);}
+  .roulette-pointer::after{bottom:-6px;border-bottom:9px solid var(--gold-soft);transform:translateX(-50%);}
+  .roulette-strip{position:absolute;top:0;left:0;height:100%;display:flex;transition:transform 6.5s cubic-bezier(.15,.6,.25,1);will-change:transform;}
+  .roulette-cell{width:64px;height:100%;flex:0 0 auto;border-right:1px solid rgba(0,0,0,.35);}
+  .roulette-cell-rouge{background:#c1443c;}
+  .roulette-cell-noir{background:#161616;}
+  .roulette-cell-vert{background:#3fa34d;}
+  .roulette-result-dot{width:90px;height:90px;border-radius:50%;margin:24px auto 10px;border:4px solid var(--panel-2);}
+  .roulette-result-dot.roulette-red{background:#c1443c;}
+  .roulette-result-dot.roulette-black{background:#111;}
+  .roulette-result-dot.roulette-green{background:#3fa34d;}
+  .coin-emoji{font-size:90px;margin:24px auto 10px;display:block;animation:coinSpin 1.2s ease-out;}
+  .coin-emoji.still{animation:none;}
+  @keyframes coinSpin{0%{transform:rotateY(0deg) scale(1);}50%{transform:rotateY(900deg) scale(1.25);}100%{transform:rotateY(1080deg) scale(1);}}
+  .duel-outcome{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold-soft);margin-top:12px;}
+  .challenge-phrase{font-size:40px;font-weight:800;color:var(--gold-soft);max-width:1000px;margin:26px auto;line-height:1.25;text-shadow:0 0 24px rgba(212,165,55,.35);}
+  .challenge-word{font-family:'Bebas Neue',sans-serif;font-size:130px;color:var(--gold-soft);margin:6px auto 0;text-transform:uppercase;letter-spacing:.04em;text-shadow:0 0 50px rgba(212,165,55,.4);}
+  .spam-top{max-width:460px;margin:22px auto 0;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 22px;text-align:left;}
+  .spam-row{display:flex;gap:14px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:20px;}
+  .spam-row:last-child{border-bottom:none;}
+  .spam-rank{font-family:'Bebas Neue',sans-serif;color:var(--gold-soft);width:24px;font-size:22px;}
+  .spam-name{flex:1;font-weight:600;}
+  .spam-count{color:var(--gold-soft);font-weight:800;}
+  .event-sub{color:var(--text-dim);font-size:18px;margin-top:6px;}
+  .money-amount{font-size:22px;font-weight:800;color:var(--gold-soft);display:block;margin-top:4px;}
+  .money-delta{font-size:15px;margin-left:8px;font-weight:700;display:inline-block;}
+  .money-delta.pos{color:var(--green);animation:moneyPop .6s ease;}
+  .money-delta.neg{color:var(--red);animation:moneyPop .6s ease;}
+  @keyframes moneyPop{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.3);opacity:1;}100%{transform:scale(1);opacity:1;}}
+  .shop-panel{max-width:760px;margin:20px auto 0;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 22px;text-align:left;}
+  .shop-cols{display:flex;gap:24px;flex-wrap:wrap;}
+  .shop-col{flex:1;min-width:280px;}
+  .shop-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .shop-row:last-child{border-bottom:none;}
+  .shop-cmd{font-family:ui-monospace,monospace;color:var(--gold-soft);font-weight:700;min-width:140px;}
+  .shop-label{flex:1;color:var(--text);}
+  .shop-price{color:var(--text-dim);font-weight:700;}
+  #walletBar{position:fixed;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;z-index:15;max-width:230px;}
+  .wallet-chip{position:relative;background:rgba(19,26,43,.92);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center;}
+  .wallet-name{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
+  .wallet-money{color:var(--gold-soft);font-weight:800;white-space:nowrap;}
+  .wallet-flash{position:absolute;right:8px;top:-2px;font-size:13px;font-weight:800;animation:walletFlash 1.7s ease forwards;pointer-events:none;}
+  .wallet-flash.pos{color:var(--green);}
+  .wallet-flash.neg{color:var(--red);}
+  @keyframes walletFlash{0%{opacity:0;transform:translateY(6px);}15%{opacity:1;transform:translateY(0);}70%{opacity:1;}100%{opacity:0;transform:translateY(-20px);}}
+  #toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--gold);border-radius:30px;padding:14px 26px;font-size:18px;font-weight:700;color:var(--gold-soft);opacity:0;transition:opacity .35s ease,transform .35s ease;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.5);pointer-events:none;max-width:85vw;text-align:center;}
+  #toast.toast-show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .cos-rainbow{background:linear-gradient(90deg,#ff5050,#ffb347,#f5e663,#6bff8c,#57c7ff,#b98bff,#ff5050);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:cosRainbow 3s linear infinite;}
+  @keyframes cosRainbow{to{background-position:300% 0;}}
+  .cos-fire{color:#ffb43d;text-shadow:0 0 8px rgba(255,150,0,.85),0 0 16px rgba(255,60,0,.5);animation:flameFlicker 1.1s ease-in-out infinite alternate;}
+  .cos-ice{color:#a9e9ff;text-shadow:0 0 8px rgba(120,210,255,.85),0 0 16px rgba(80,170,255,.5);animation:cosIce 1.6s ease-in-out infinite alternate;}
+  @keyframes cosIce{0%{text-shadow:0 0 6px rgba(120,210,255,.7),0 0 12px rgba(80,170,255,.4);}100%{text-shadow:0 0 12px rgba(160,230,255,1),0 0 24px rgba(80,170,255,.8);}}
+  .cos-shiny{position:relative;background:linear-gradient(100deg,var(--gold-soft) 40%,#fff 50%,var(--gold-soft) 60%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:cosShiny 2.2s linear infinite;}
+  @keyframes cosShiny{0%{background-position:150% 0;}100%{background-position:-50% 0;}}
+  .leaderboard{max-width:480px;margin:30px auto 0;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 24px;text-align:left;}
+  .lb-title{font-family:'Bebas Neue',sans-serif;letter-spacing:.1em;color:var(--gold);font-size:18px;text-align:center;margin-bottom:10px;}
+  .lb-row{display:flex;align-items:center;gap:14px;padding:7px 0;border-bottom:1px solid var(--border);font-size:17px;}
+  .lb-row:last-child{border-bottom:none;}
+  .lb-rank{font-family:'Bebas Neue',sans-serif;color:var(--gold-soft);width:24px;font-size:19px;}
+  .lb-name{flex:1;}
+  .lb-score{color:var(--text-dim);font-weight:600;}
+  @keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.9);}to{opacity:1;transform:translateY(0) scale(1);}}
+</style>
+</head>
+<body>
+
+<!-- ============ CONTROL PANEL ============ -->
+<div id="control-view">
+  <div class="header">
+    <div>
+      <p class="title">LE SUPER QUIZZ — Panneau de contrôle</p>
+      <p class="subtitle">Garde cet onglet caché de ta scène. Ouvre l'écran de diffusion et ajoute-le en source navigateur.</p>
+    </div>
+    <button class="btn btn-gold" id="openBroadcastBtn">Ouvrir l'écran de diffusion ↗</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Connexion au chat Twitch</h2>
+        <div class="row">
+          <div>
+            <label>Nom de la chaîne Twitch</label>
+            <input type="text" id="channelInput" placeholder="ex: ninja">
+          </div>
+          <button class="btn btn-gold" id="connectBtn">Se connecter</button>
+        </div>
+        <div class="status-line"><span class="status-dot" id="statusDot"></span><span id="statusText">Non connecté</span></div>
+        <p class="help">Connexion anonyme en lecture seule (aucune identification requise). Fonctionne pour n'importe quelle chaîne publique.</p>
+      </div>
+
+      <div class="card">
+        <h2>Questions par catégorie</h2>
+        <p class="help" style="margin-top:0;">Un champ par catégorie : renomme le nom de la catégorie, colle ses questions au format <code>Question ? = Réponse</code> (une par ligne). Ajoute ou retire des catégories librement. Tous les 5 questions, un joueur choisit une de ces catégories (2 minimum, sinon l'événement n'a pas lieu).</p>
+        <div id="categoryBlocks"></div>
+        <div class="actions">
+          <button class="btn" id="addCategoryBlockBtn" type="button">+ Ajouter une catégorie</button>
+          <button class="btn btn-gold" id="loadQuestionsBtn">Charger toutes les questions</button>
+          <span class="status-line" id="questionsStatus" style="margin:0;">Aucune question chargée</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Mode test (sans Twitch)</h2>
+        <p class="help">Simule des messages de chat pour tester le déroulé avant d'être en direct.</p>
+        <div class="row">
+          <div><label>Pseudo</label><input type="text" id="testUser" placeholder="testeur1"></div>
+          <div><label>Message</label><input type="text" id="testMsg" placeholder="go / réponse"></div>
+          <button class="btn" id="testSendBtn">Envoyer</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>État de la partie</h2>
+        <p style="margin:0 0 12px;"><span class="phase-badge" id="phaseBadge">IDLE</span></p>
+        <div class="stat-row">
+          <div class="stat"><div class="num" id="statJoined">0</div><div class="lbl">Inscrits</div></div>
+          <div class="stat"><div class="num" id="statAlive">0</div><div class="lbl">En jeu</div></div>
+          <div class="stat"><div class="num" id="statAnswered">0</div><div class="lbl">Ont répondu</div></div>
+          <div class="stat"><div class="num" id="statQIndex">–</div><div class="lbl">Question</div></div>
+        </div>
+        <div class="q-current" id="currentQuestionBox" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Déroulé du jeu</h2>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;">
+          <input type="checkbox" id="autoModeCheckbox" style="width:auto;">
+          <span style="color:var(--text);font-size:13.5px;font-weight:600;">Mode automatique — enchaîne toutes les étapes tout seul</span>
+        </label>
+        <p class="help" style="margin-top:0;">Tu n'as qu'à lancer les inscriptions ; le reste (questions, révélations, vainqueur, prochaine partie, nouvelle manche) s'enchaîne seul en boucle. Décoche à tout moment pour reprendre la main.</p>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;">
+          <input type="checkbox" id="turnModeCheckbox" style="width:auto;">
+          <span style="color:var(--text);font-size:13.5px;font-weight:600;">Mode tour par tour — un seul joueur répond à chaque question</span>
+        </label>
+        <p class="help" style="margin-top:0;">À chaque question, seul le joueur dont c'est le tour peut répondre dans le chat ; les autres ne sont pas concernés par cette manche. L'ordre des joueurs est tiré au sort à la fermeture des inscriptions puis tourne à chaque question.</p>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;">
+          <input type="checkbox" id="soloModeCheckbox" style="width:auto;">
+          <span style="color:var(--text);font-size:13.5px;font-weight:600;">Autoriser une partie solo</span>
+        </label>
+        <p class="help" style="margin-top:0;">Si un seul joueur est inscrit, le compte à rebours démarre quand même et il joue seul (tente de répondre au maximum de questions). Son pile ou face se joue alors sans adversaire : il accepte ou refuse simplement de tenter sa chance.</p>
+        <div class="row">
+          <div><label>Vies par joueur</label><input type="number" id="livesSetting" value="3" min="1" max="9"></div>
+        </div>
+        <p class="help" style="margin-top:0;">Une mauvaise réponse fait perdre un cœur ; un joueur n'est éliminé qu'à 0 vie. Un mot juste dans la réponse suffit à la valider.</p>
+        <p class="help" style="margin-top:0;">Automatique : après 2 vies perdues d'affilée, un joueur peut parier de l'argent contre un autre (top scores) à pile ou face — le gagnant prend la mise dans la cagnotte du perdant ; si le perdant ne peut pas payer, il fait tapis et perd une vie en plus (banqueroute). Sans adversaire (solo), le pari reste basé sur une vie. Toutes les 8 questions, une roulette permet de miser de l'argent (ex: 200 noir) — rouge/noir x2, vert x14 (et rare, une seule case verte).</p>
+
+        <h3>Événements aléatoires</h3>
+        <p class="help" style="margin-top:0;">Entre deux questions, un événement peut se déclencher au hasard (jamais deux fois de suite, ni en même temps que la roulette, le vote ou le duel).</p>
+        <div class="row">
+          <div><label>Chance après chaque question (%)</label><input type="number" id="eventChance" value="25" min="0" max="100"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
+          <input type="checkbox" id="evBet" checked style="width:auto;">
+          <span style="font-size:13.5px;">Pari : le prochain joueur va-t-il répondre correctement ? (2 joueurs min.)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
+          <input type="checkbox" id="evPhrase" checked style="width:auto;">
+          <span style="font-size:13.5px;">Défi : le premier qui tape la phrase gagne une vie</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
+          <input type="checkbox" id="evSpam" checked style="width:auto;">
+          <span style="font-size:13.5px;">Défi : spammer un mot pendant 10 secondes</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
+          <input type="checkbox" id="evDilemma" checked style="width:auto;">
+          <span style="font-size:13.5px;">Dilemme : tout le monde gagne une vie ou une personne au hasard en perd une (2 joueurs min.)</span>
+        </label>
+
+        <h3>1. Inscriptions</h3>
+        <p class="help" style="margin-top:0;">Le compte à rebours ne démarre qu'une fois 2 joueurs inscrits minimum (tu peux forcer le démarrage à tout moment avec le bouton rouge).</p>
+        <div class="row">
+          <div><label>Durée (secondes)</label><input type="number" id="inscriptionSecs" value="30" min="5"></div>
+          <button class="btn btn-gold" id="startInscriptionBtn">Lancer les inscriptions</button>
+          <button class="btn btn-red" id="closeInscriptionBtn" disabled>Fermer & démarrer la partie</button>
+        </div>
+        <div id="joinedList"></div>
+
+        <h3>2. Questions</h3>
+        <div class="row">
+          <div><label>Durée par question (s)</label><input type="number" id="questionSecs" value="20" min="5"></div>
+          <button class="btn btn-gold" id="nextQuestionBtn" disabled>Question suivante</button>
+          <button class="btn" id="revealNowBtn" disabled>Révéler maintenant</button>
+        </div>
+
+        <h3>3. Fin de manche</h3>
+        <div class="actions">
+          <button class="btn btn-gold" id="declareWinnerBtn" disabled>Désigner le vainqueur</button>
+          <select id="manualWinnerSelect" style="display:none;background:#0E1524;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;"></select>
+        </div>
+
+        <h3>4. Prochaine partie</h3>
+        <p class="help" style="margin-top:0;">Ce compte à rebours sert aussi de nouvelle période d'inscription : les spectateurs doivent retaper GO pour rejoindre.</p>
+        <div class="row">
+          <div><label>Compte à rebours (secondes)</label><input type="number" id="nextGameSecs" value="60" min="5"></div>
+          <button class="btn" id="startNextCountdownBtn" disabled>Lancer le compte à rebours</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Classement</h2>
+        <p class="help" style="margin-top:0;">Cagnotte en argent, sauvegardée dans le navigateur (survit aux fermetures de page et aux parties). Visible en temps réel à l'écran pendant chaque partie, avec un +$/-$ à chaque gain ou perte.</p>
+        <p class="help" style="margin-top:0;">L'argent gagné sur une bonne réponse ou pour avoir survécu à un round est multiplié par le numéro de la manche en cours (x1 à la question 1, x2 à la 2, etc.). Attention : si un joueur est éliminé, il perd toute la cagnotte accumulée pendant cette partie (son solde d'avant-partie est intact). L'objet Cashout permet de quitter la partie en cours en conservant tout son argent ; sinon, seul le vainqueur garde ses gains de la partie.</p>
+        <div id="leaderboardBox"></div>
+        <div class="actions">
+          <button class="btn" id="resetScoresBtn">Réinitialiser toutes les cagnottes</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Journal</h2>
+        <div class="log" id="logBox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ BROADCAST VIEW ============ -->
+<div id="broadcast-view" style="display:none;">
+  <div id="stage"></div>
+  <div id="confetti"></div>
+  <div id="toast"></div>
+  <div id="walletBar"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const isBroadcast = params.get('view') === 'broadcast';
+
+document.getElementById(isBroadcast ? 'control-view' : 'broadcast-view').remove();
+
+/* ---------- Catalogue boutique (partagé diffusion + contrôle) ---------- */
+const SHOP_ITEMS = {
+  difficile: { label: 'Question difficile', price: 150, cmd: '!difficile <pseudo>', desc: 'Le prochain joueur ciblé perd 2 vies au lieu d\'une s\'il se trompe.' },
+  piece:     { label: 'Pièce', price: 150, cmd: '!piece', desc: 'Pile ou face perso quand tu ne connais pas la réponse : pile tu gagnes, face tu perds.' },
+  joker:     { label: 'Joker', price: 200, cmd: '!joker', desc: 'File ta question à un autre joueur au hasard.' },
+  pistolet:  { label: 'Pistolet', price: 300, cmd: '!pistolet <pseudo>', desc: 'Tire sur un joueur : il perd une vie.' },
+  hack:      { label: 'Hacking', price: 250, cmd: '!hack <pseudo>', desc: 'Vole l\'argent d\'un joueur pendant 10s (1 caractère tapé = 1$).' },
+  cashout:   { label: 'Cashout', price: 500, cmd: '!cashout', desc: 'Quitte la partie en cours immédiatement et conserve tout ton argent accumulé.' },
+};
+const COSMETIC_PRICE = 2000;
+const SHOP_COSMETICS = {
+  arcenciel: { label: 'Pseudo arc-en-ciel', cmd: '!arcenciel' },
+  feu:       { label: 'Pseudo de feu', cmd: '!feu' },
+  glace:     { label: 'Pseudo de glace', cmd: '!glace' },
+  brillant:  { label: 'Pseudo brillant', cmd: '!brillant' },
+  emoji:     { label: 'Émoji après le pseudo (jusqu\'à 3, aléatoire)', cmd: '!emoji' },
+};
+const EMOJI_POOL = ['🔥','⭐','💎','👑','🐸','🦄','🍀','⚡','🎯','💀'];
+
+/* ===================================================================
+   BROADCAST MODE
+=================================================================== */
+if (isBroadcast) {
+  document.getElementById('broadcast-view').style.display = 'flex';
+  let bState = { phase: 'idle', joined: [], roster: [] };
+  let lastPhaseForConfetti = null;
+  let lastLostLogin = null;
+  let pendingStripTarget = null;
+
+  const ROULETTE_CELL_W = 64;
+  const ROULETTE_STRIP_UNIT = ['rouge','noir','rouge','noir','rouge','noir','rouge','vert','noir','rouge','noir','rouge','noir','rouge','noir'];
+
+  function buildRouletteStrip(resultColor){
+    const repeats = 6;
+    let cells = [];
+    for (let i = 0; i < repeats; i++) cells = cells.concat(ROULETTE_STRIP_UNIT);
+    const unitLen = ROULETTE_STRIP_UNIT.length;
+    const candidates = [];
+    for (let i = unitLen * 3; i < unitLen * 5; i++) {
+      if (cells[i] === resultColor) candidates.push(i);
+    }
+    const landingIndex = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : cells.length - 3;
+    const viewportW = 520;
+    const offset = landingIndex * ROULETTE_CELL_W + ROULETTE_CELL_W / 2 - viewportW / 2;
+    return { cells, offset };
+  }
+
+  function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':s; return d.innerHTML; }
+
+  function readWallet(login){
+    if (!login) return null;
+    try { return (JSON.parse(localStorage.getItem('superquizz_wallets') || '{}'))[login] || null; } catch(e) { return null; }
+  }
+  function styledNameHtml(login, name){
+    const w = readWallet(login);
+    let cls = '';
+    if (w && w.cosmetics) {
+      if (w.cosmetics.arcenciel) cls += ' cos-rainbow';
+      if (w.cosmetics.feu) cls += ' cos-fire';
+      if (w.cosmetics.glace) cls += ' cos-ice';
+      if (w.cosmetics.brillant) cls += ' cos-shiny';
+    }
+    const emojis = (w && w.emojis && w.emojis.length) ? ' ' + w.emojis.join('') : '';
+    return (cls ? `<span class="${cls.trim()}">${esc(name)}</span>` : esc(name)) + emojis;
+  }
+
+  function renderHearts(lives, maxLives, opts){
+    opts = opts || {};
+    let html = '';
+    const max = maxLives || lives || 1;
+    for (let i = 0; i < max; i++) {
+      if (i < lives) {
+        const gained = opts.gainedFrom != null && i >= opts.gainedFrom && i < lives;
+        html += `<span class="heart heart-full${gained ? ' heart-gain' : ''}">❤️</span>`;
+      } else {
+        const lost = opts.lostIndex === i;
+        html += `<span class="heart heart-empty${lost ? ' heart-pop' : ''}">🤍</span>`;
+      }
+    }
+    return html;
+  }
+
+  function joinedChipHtml(p){
+    const isChampion = p.login && p.login === bState.lastWinnerLogin;
+    return `<span class="chip${isChampion ? ' champion' : ''}">${isChampion ? '👑 ' : ''}${styledNameHtml(p.login, p.name)}${isChampion ? ' 🔥' : ''}</span>`;
+  }
+
+  function launchConfetti(){
+    const colors = ['#D4A537','#E8C468','#3FA34D','#C1443C','#8fb9ff','#F2EFE6'];
+    const el = document.getElementById('confetti');
+    let html = '';
+    for (let i = 0; i < 140; i++) {
+      const left = Math.random() * 100;
+      const delay = Math.random() * 0.6;
+      const duration = 2.8 + Math.random() * 1.6;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const rotate = Math.random() * 360;
+      const w = 6 + Math.random() * 6;
+      const h = w * 1.6;
+      html += `<span class="confetti-piece" style="left:${left}%;background:${color};width:${w}px;height:${h}px;transform:rotate(${rotate}deg);animation-delay:${delay}s;animation-duration:${duration}s;"></span>`;
+    }
+    el.innerHTML = html;
+  }
+
+  function updateConfetti(){
+    if (bState.phase === 'winner' && lastPhaseForConfetti !== 'winner') {
+      launchConfetti();
+    } else if (bState.phase !== 'winner') {
+      document.getElementById('confetti').innerHTML = '';
+    }
+    lastPhaseForConfetti = bState.phase;
+  }
+
+  function render() {
+    updateConfetti();
+    const stage = document.getElementById('stage');
+    let html = '';
+    switch (bState.phase) {
+      case 'inscription': {
+        html = `<div class="eyebrow">LE SUPER QUIZZ</div>
+          <div class="cta">Tape <span class="go">GO</span> dans le chat pour rejoindre !</div>
+          ${bState.timeLeft != null ? `<div class="count-big">${bState.timeLeft}</div>` : `<div class="waiting-mini">${bState.soloMode ? 'Invite tes amis sur le stream pour jouer avec toi !' : 'En attente d\'au moins 2 joueurs pour lancer le compte à rebours…'}</div>`}
+          <div class="joined-grid">${(bState.joined||[]).map(joinedChipHtml).join('')}</div>
+          <div class="joined-count">${(bState.joined||[]).length} joueur${(bState.joined||[]).length>1?'s':''} inscrit${(bState.joined||[]).length>1?'s':''}</div>`;
+        break;
+      }
+      case 'question': {
+        const pct = bState.totalTime ? Math.max(0, Math.min(100, (bState.timeLeft/bState.totalTime)*100)) : 100;
+        html = `<div class="q-index">QUESTION ${bState.qIndex}</div>
+          ${bState.activeTurnName ? `<div class="turn-banner">Au tour de <span>${esc(bState.activeTurnName)}</span></div>` : ''}
+          ${bState.betTargetName ? `<div class="turn-banner">Pari en cours sur <span>${esc(bState.betTargetName)}</span></div>` : ''}
+          <div class="q-text">${esc(bState.question)}</div>
+          <div class="timer-bar"><div class="timer-fill" style="width:${pct}%"></div></div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>
+          <div class="alive-count">${bState.aliveCount} joueur${bState.aliveCount>1?'s':''} en jeu</div>`;
+        break;
+      }
+      case 'reveal_answer': {
+        html = `<div class="q-index">QUESTION ${bState.qIndex}</div>
+          <div class="q-text">${esc(bState.question)}</div>
+          <div class="answer-reveal">Bonne réponse : <span>${esc(bState.answer)}</span></div>`;
+        break;
+      }
+      case 'reveal_eliminated': {
+        const roster = bState.roster || [];
+        html = `<div class="q-index">QUESTION ${bState.qIndex}</div>
+          <div class="answer-reveal">Bonne réponse : <span>${esc(bState.answer)}</span></div>
+          <div class="lives-grid">${roster.map(p => `
+            <div class="life-chip${p.eliminated ? ' eliminated' : ''}${p.login === bState.lastWinnerLogin ? ' champion' : ''}">
+              <span class="life-name">${p.login === bState.lastWinnerLogin ? '👑 ' : ''}${styledNameHtml(p.login, p.name)}${p.login === bState.lastWinnerLogin ? ' 🔥' : ''}</span>
+              <span class="life-hearts">${renderHearts(p.lives, p.maxLives, p.login === lastLostLogin ? { lostIndex: p.lives } : {})}</span>
+            </div>`).join('')}</div>
+          <div class="alive-count">${bState.aliveCount} joueur${bState.aliveCount>1?'s':''} restant${bState.aliveCount>1?'s':''}</div>`;
+        break;
+      }
+      case 'winner': {
+        html = `<div class="eyebrow">VAINQUEUR</div><div class="winner-name">${styledNameHtml(bState.lastWinnerLogin, bState.winner)}</div>`;
+        break;
+      }
+      case 'next_countdown': {
+        const lb = bState.leaderboard || [];
+        html = `<div class="eyebrow">LE SUPER QUIZZ</div>
+          ${bState.lastWinner ? `<div class="prev-winner">Vainqueur de la partie précédente : <span class="champion-text">👑 ${esc(bState.lastWinner)} 🔥</span></div>` : ''}
+          <div class="cta">Tape <span class="go">GO</span> dans le chat pour rejoindre !</div>
+          ${bState.timeLeft != null ? `<div class="cta">PROCHAINE PARTIE DANS</div><div class="count-big">${bState.timeLeft}</div>` : `<div class="waiting-mini">${bState.soloMode ? 'Invite tes amis sur le stream pour jouer avec toi !' : 'En attente d\'au moins 2 joueurs pour lancer le compte à rebours…'}</div>`}
+          <div class="joined-grid">${(bState.joined||[]).map(joinedChipHtml).join('')}</div>
+          <div class="joined-count">${(bState.joined||[]).length} joueur${(bState.joined||[]).length>1?'s':''} inscrit${(bState.joined||[]).length>1?'s':''}</div>
+          ${lb.length ? `<div class="leaderboard">
+            <div class="lb-title">CLASSEMENT</div>
+            ${lb.slice(0,5).map((p,i)=>`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${styledNameHtml(p.login, p.name)}</span><span class="lb-score">$${p.score}</span></div>`).join('')}
+          </div>` : ''}
+          <div class="shop-panel">
+            <div class="lb-title">BOUTIQUE — tape la commande dans le chat</div>
+            <div class="shop-cols">
+              <div class="shop-col">${Object.values(SHOP_ITEMS).map(it=>`<div class="shop-row"><span class="shop-cmd">${esc(it.cmd)}</span><span class="shop-label">${esc(it.label)}</span><span class="shop-price">$${it.price}</span></div>`).join('')}</div>
+              <div class="shop-col">${Object.values(SHOP_COSMETICS).map(c=>`<div class="shop-row"><span class="shop-cmd">${esc(c.cmd)}</span><span class="shop-label">${esc(c.label)}</span><span class="shop-price">$${COSMETIC_PRICE}</span></div>`).join('')}</div>
+            </div>
+          </div>`;
+        break;
+      }
+      case 'vote': {
+        const opts = bState.voteOptions || [];
+        html = `<div class="eyebrow">CHOIX DE LA PROCHAINE CATÉGORIE</div>
+          <div class="cta">${esc(bState.chooserName||'')} choisit</div>
+          <div class="vote-options">${opts.map(o=>`<div class="vote-option"><span class="vote-key">${esc(o.key)}</span><span class="vote-kw">${esc(o.category)}</span></div>`).join('')}</div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>`;
+        break;
+      }
+      case 'duel_offer': {
+        html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+          <div class="cta">${esc(bState.challengerName||'')}, tenter ta chance à pile ou face${bState.soloDuel ? ' pour récupérer une vie' : ''} ?</div>
+          ${bState.soloDuel
+            ? ''
+            : `<div class="cta">Qui défies-tu, et pour combien ? (ex : A 100)</div>`}
+          ${bState.soloDuel
+            ? `<div class="vote-options"><div class="vote-option"><span class="vote-key">OUI</span><span class="vote-kw">Tenter</span></div><div class="vote-option"><span class="vote-key">NON</span><span class="vote-kw">Refuser</span></div></div>`
+            : `<div class="vote-options">${(bState.duelOptions||[]).map(o=>`<div class="vote-option"><span class="vote-key">${esc(o.key)}</span><span class="vote-kw">${esc(o.name)}</span></div>`).join('')}<div class="vote-option"><span class="vote-key">D</span><span class="vote-kw">Non merci</span></div></div>`}
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>`;
+        break;
+      }
+      case 'duel_call': {
+        html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+          <div class="cta">${esc(bState.challengerName||'')} défie ${esc(bState.opponentName||'')} pour $${bState.betAmount||0} !</div>
+          <div class="cta">${esc(bState.opponentName||'')}, choisis PILE ou FACE</div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>`;
+        break;
+      }
+      case 'duel_flip': {
+        if (bState.moneyEvent) {
+          const players = bState.moneyPlayers || [];
+          html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+            <div class="lives-grid">${players.map(p => `
+              <div class="life-chip${p.eliminated?' eliminated':''}">
+                <span class="life-name">${styledNameHtml(p.login, p.name)}${p.bankrupt ? ' 💸' : ''}</span>
+                <span class="money-amount">$${p.money}${p.delta!=null ? `<span class="money-delta ${p.delta>=0?'pos':'neg'}">${p.delta>=0?'+':''}${p.delta}</span>` : ''}</span>
+              </div>`).join('')}</div>
+            ${players.some(p=>p.bankrupt) ? `<div class="event-sub">Banqueroute : incapable de payer la totalité de la mise, vie perdue en plus !</div>` : ''}`;
+        } else if (bState.showHearts) {
+          const players = bState.duelPlayers || [];
+          html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+            <div class="lives-grid">${players.map(p => `
+              <div class="life-chip${p.eliminated?' eliminated':''}">
+                <span class="life-name">${esc(p.name)}</span>
+                <span class="life-hearts">${renderHearts(p.lives, p.maxLives, p.anim || {})}</span>
+              </div>`).join('')}</div>`;
+        } else if (bState.result) {
+          const soloOutcomeText = bState.soloDuel
+            ? (bState.soloWon ? esc(bState.challengerName||'') + ' gagne !' : esc(bState.challengerName||'') + ' ne récupère pas de vie.')
+            : esc(bState.winnerName||'') + ' gagne !';
+          html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+            <div class="cta">La pièce tombe sur ${esc((bState.result||'').toUpperCase())} !</div>
+            <div class="coin-emoji still">🪙</div>
+            <div class="duel-outcome">${soloOutcomeText}</div>`;
+        } else {
+          html = `<div class="eyebrow">DUEL PILE OU FACE</div>
+            ${bState.soloDuel ? '' : `<div class="cta">${esc(bState.opponentName||'')} avait choisi ${esc((bState.call||'').toUpperCase())}</div>`}
+            <div class="coin-emoji">🪙</div>`;
+        }
+        break;
+      }
+      case 'bet_offer': {
+        html = `<div class="eyebrow">PARI</div>
+          <div class="cta">Penses-tu que <span class="go">${esc(bState.betTargetName||'')}</span> va répondre correctement à la prochaine question ?</div>
+          <div class="event-sub">Bon pronostic : tu gagnes une vie · Mauvais pronostic : tu en perds une</div>
+          <div class="vote-options"><div class="vote-option"><span class="vote-key">OUI</span><span class="vote-kw">Il va réussir</span></div><div class="vote-option"><span class="vote-key">NON</span><span class="vote-kw">Il va se tromper</span></div></div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>
+          <div class="alive-count">${bState.betsCount||0} pari(s) enregistré(s)</div>`;
+        break;
+      }
+      case 'phrase_challenge': {
+        html = `<div class="eyebrow">DÉFI</div>
+          <div class="cta">Le premier qui tape cette phrase dans le chat gagne une vie !</div>
+          <div class="challenge-phrase">${esc(bState.challengePhrase||'')}</div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>`;
+        break;
+      }
+      case 'spam_challenge': {
+        const top = bState.spamTop3 || [];
+        html = `<div class="eyebrow">DÉFI SPAM</div>
+          <div class="cta">Spamme ce mot dans le chat ! Celui qui l'écrit le plus gagne une vie</div>
+          <div class="challenge-word">${esc(bState.spamWord||'')}</div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>
+          <div class="spam-top">${top.length ? top.map((p,i)=>`<div class="spam-row"><span class="spam-rank">${i+1}</span><span class="spam-name">${esc(p.name)}</span><span class="spam-count">${p.count}</span></div>`).join('') : '<div class="spam-row"><span class="spam-name" style="color:var(--text-dim);">Personne n\'a encore écrit le mot…</span></div>'}</div>`;
+        break;
+      }
+      case 'dilemma_offer': {
+        html = `<div class="eyebrow">DILEMME</div>
+          <div class="cta">${esc(bState.chooserName||'')}, que choisis-tu ?</div>
+          <div class="vote-options">
+            <div class="vote-option"><span class="vote-key">A</span><span class="vote-kw">Tout le monde gagne une vie</span></div>
+            <div class="vote-option"><span class="vote-key">B</span><span class="vote-kw">Une personne au hasard perd une vie<br>(peut-être toi !)</span></div>
+          </div>
+          <div class="timer-num">${bState.timeLeft ?? ''}</div>`;
+        break;
+      }
+      case 'event_result': {
+        const players = bState.eventPlayers || [];
+        const top = bState.spamTop3 || [];
+        html = `<div class="eyebrow">${esc(bState.eventTitle||'')}</div>
+          ${bState.eventText ? `<div class="cta">${esc(bState.eventText)}</div>` : ''}
+          ${bState.eventSubtext ? `<div class="event-sub">${esc(bState.eventSubtext)}</div>` : ''}
+          ${top.length ? `<div class="spam-top">${top.map((p,i)=>`<div class="spam-row"><span class="spam-rank">${i+1}</span><span class="spam-name">${esc(p.name)}</span><span class="spam-count">${p.count}</span></div>`).join('')}</div>` : ''}
+          <div class="lives-grid">${players.map(p => `
+            <div class="life-chip${p.eliminated?' eliminated':''}">
+              <span class="life-name">${esc(p.name)}</span>
+              <span class="life-hearts">${renderHearts(p.lives, p.maxLives, p.anim || {})}</span>
+            </div>`).join('')}</div>`;
+        break;
+      }
+      case 'roulette_bet': {
+        html = `<div class="eyebrow">ROULETTE</div>
+          <div class="cta">Envie de tenter ta chance à la roulette ?</div>
+          <div class="cta">Tape un montant suivi de la couleur : <span class="go">200 NOIR</span></div>
+          <div class="event-sub">Rouge x2 · Noir x2 · Vert x14</div>
+          <div class="count-big">${bState.timeLeft ?? ''}</div>
+          <div class="alive-count">${bState.rouletteBetsCount||0} mise(s) enregistrée(s)</div>`;
+        break;
+      }
+      case 'roulette_spin': {
+        const built = buildRouletteStrip(bState.rouletteResult || 'rouge');
+        pendingStripTarget = built.offset;
+        html = `<div class="eyebrow">LA ROULETTE TOURNE...</div>
+          <div class="roulette-track">
+            <div class="roulette-pointer"></div>
+            <div class="roulette-strip" id="rouletteStripEl" style="width:${built.cells.length * ROULETTE_CELL_W}px;">
+              ${built.cells.map(c => `<div class="roulette-cell roulette-cell-${c}"></div>`).join('')}
+            </div>
+          </div>`;
+        break;
+      }
+      case 'roulette_result': {
+        const players = bState.moneyPlayers || [];
+        const colorClass = bState.rouletteResult === 'rouge' ? 'roulette-red' : (bState.rouletteResult === 'noir' ? 'roulette-black' : 'roulette-green');
+        html = `<div class="eyebrow">RÉSULTAT DE LA ROULETTE</div>
+          <div class="roulette-result-dot ${colorClass}"></div>
+          <div class="cta">${esc((bState.rouletteResult||'').toUpperCase())}</div>
+          <div class="lives-grid">${players.map(p => `
+            <div class="life-chip">
+              <span class="life-name">${styledNameHtml(p.login, p.name)}</span>
+              <span class="money-amount">$${p.money}${p.delta!=null ? `<span class="money-delta ${p.delta>=0?'pos':'neg'}">${p.delta>=0?'+':''}${p.delta}</span>` : ''}</span>
+            </div>`).join('')}</div>`;
+        break;
+      }
+      default: {
+        html = `<div class="eyebrow">LE SUPER QUIZZ</div>`;
+      }
+    }
+    stage.innerHTML = html;
+    if (pendingStripTarget != null) {
+      const target = pendingStripTarget;
+      pendingStripTarget = null;
+      const el = document.getElementById('rouletteStripEl');
+      if (el) {
+        void el.offsetWidth; // force reflow so the transition starts from translateX(0)
+        requestAnimationFrame(() => {
+          el.style.transform = 'translateX(-' + target + 'px)';
+        });
+      }
+    }
+  }
+
+  window.addEventListener('message', (e) => {
+    const msg = e.data;
+    if (!msg || !msg.type) return;
+    if (msg.type === 'state') {
+      bState = msg.state;
+      lastLostLogin = null;
+      render();
+    } else if (msg.type === 'life_lost') {
+      bState.roster = (bState.roster || []).map(p =>
+        p.login === msg.login ? Object.assign({}, p, { lives: msg.livesLeft, eliminated: msg.eliminated }) : p
+      );
+      lastLostLogin = msg.login;
+      render();
+    } else if (msg.type === 'toast') {
+      showToast(msg.text);
+    } else if (msg.type === 'wallet_update') {
+      bWallets = msg.players || [];
+      renderWalletBar();
+    } else if (msg.type === 'money_flash') {
+      flashMoney(msg.login, msg.amount);
+    }
+  });
+
+  let bWallets = [];
+  function renderWalletBar(){
+    const el = document.getElementById('walletBar');
+    if (!el) return;
+    const existing = new Map();
+    el.querySelectorAll('.wallet-chip').forEach(c => existing.set(c.dataset.login, c));
+    const seen = new Set();
+    bWallets.forEach(p => {
+      seen.add(p.login);
+      let chip = existing.get(p.login);
+      if (!chip) {
+        chip = document.createElement('div');
+        chip.className = 'wallet-chip';
+        chip.dataset.login = p.login;
+        chip.innerHTML = '<span class="wallet-name"></span><span class="wallet-money"></span>';
+        el.appendChild(chip);
+      }
+      chip.querySelector('.wallet-name').innerHTML = styledNameHtml(p.login, p.name);
+      chip.querySelector('.wallet-money').textContent = '$' + p.money;
+    });
+    existing.forEach((chip, login) => { if (!seen.has(login)) chip.remove(); });
+  }
+  function flashMoney(login, amount){
+    if (!amount) return;
+    const chip = document.querySelector('#walletBar .wallet-chip[data-login="' + (window.CSS && CSS.escape ? CSS.escape(login) : login) + '"]');
+    if (!chip) return;
+    const flash = document.createElement('span');
+    flash.className = 'wallet-flash ' + (amount >= 0 ? 'pos' : 'neg');
+    flash.textContent = (amount >= 0 ? '+' : '') + amount + '$';
+    chip.appendChild(flash);
+    setTimeout(() => flash.remove(), 1700);
+  }
+
+  let toastTimer = null;
+  function showToast(text){
+    const el = document.getElementById('toast');
+    el.textContent = text;
+    el.classList.remove('toast-show');
+    void el.offsetWidth;
+    el.classList.add('toast-show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('toast-show'), 3400);
+  }
+
+  render();
+  if (window.opener) window.opener.postMessage({ type: 'broadcast-ready' }, '*');
+}
+
+/* ===================================================================
+   CONTROL PANEL MODE
+=================================================================== */
+if (!isBroadcast) {
+  let ws = null;
+  let broadcastWin = null;
+  let autoMode = false;
+  let turnMode = false;
+  let soloMode = false;
+  let lastWinner = null;
+  let lastWinnerLogin = null;
+  const AUTO_PAUSE_MS = 2200;
+  const WINNER_DISPLAY_MS = 10000;
+  document.getElementById('autoModeCheckbox').onchange = (e) => {
+    autoMode = e.target.checked;
+    log(autoMode ? 'Mode automatique activé.' : 'Mode automatique désactivé.');
+  };
+  document.getElementById('turnModeCheckbox').onchange = (e) => {
+    turnMode = e.target.checked;
+    log(turnMode ? 'Mode tour par tour activé : un seul joueur répondra par question.' : 'Mode tour par tour désactivé : tous les joueurs répondent à chaque question.');
+  };
+  document.getElementById('soloModeCheckbox').onchange = (e) => {
+    soloMode = e.target.checked;
+    log(soloMode ? 'Partie solo autorisée : le jeu démarre même à 1 seul joueur inscrit.' : 'Partie solo désactivée : 2 joueurs minimum requis.');
+  };
+
+  /* ---------- Cagnotte persistante (argent, objets, cosmétiques) ---------- */
+  const WALLET_KEY = 'superquizz_wallets';
+  function loadWallets(){
+    try { return JSON.parse(localStorage.getItem(WALLET_KEY) || '{}'); } catch(e){ return {}; }
+  }
+  function saveWallets(){
+    try { localStorage.setItem(WALLET_KEY, JSON.stringify(wallets)); } catch(e){}
+  }
+  let wallets = loadWallets(); // login -> { name, money, items:{code:count}, cosmetics:{code:true}, emojis:[] }
+  function ensureWallet(login, name){
+    if (!wallets[login]) wallets[login] = { name, money: 0, items: {}, cosmetics: {}, emojis: [] };
+    if (name) wallets[login].name = name;
+    return wallets[login];
+  }
+  function addMoney(login, name, amount, reason){
+    const w = ensureWallet(login, name);
+    const before = w.money;
+    w.money = Math.max(0, w.money + amount);
+    const actualDelta = w.money - before;
+    saveWallets();
+    if (reason) log(w.name + ' ' + (amount >= 0 ? 'gagne' : 'perd') + ' $' + Math.abs(amount) + ' (' + reason + '). Solde : $' + w.money);
+    if (actualDelta !== 0 && state.alive[login]) {
+      sendToBroadcast({ type: 'money_flash', login, amount: actualDelta });
+    }
+    syncWalletBar();
+    return w.money;
+  }
+
+  function syncWalletBar(){
+    const players = Object.keys(state.alive).map(login => ({
+      login, name: state.alive[login].name, money: ensureWallet(login, state.alive[login].name).money
+    }));
+    sendToBroadcast({ type: 'wallet_update', players });
+  }
+
+  function roundMultiplier(){
+    return Math.max(1, state.qIndex + 1);
+  }
+
+  function eliminatePlayer(login){
+    const p = state.alive[login];
+    if (!p) return;
+    if (!state.isSoloRun) {
+      const w = ensureWallet(login, p.name);
+      const lost = Math.max(0, w.money - (p.sessionStart || 0));
+      if (lost > 0) {
+        w.money = p.sessionStart || 0;
+        saveWallets();
+        log(p.name + ' est éliminé(e) et perd toute la cagnotte accumulée cette partie (-$' + lost + '). Solde : $' + w.money);
+        sendToBroadcast({ type: 'money_flash', login, amount: -lost });
+      }
+    }
+    delete state.alive[login];
+    syncWalletBar();
+  }
+  function getLeaderboard(){
+    return Object.entries(wallets).map(([login, w]) => ({ login, name: w.name, score: w.money })).sort((a,b) => b.score - a.score);
+  }
+  document.getElementById('resetScoresBtn').onclick = () => {
+    wallets = {};
+    saveWallets();
+    renderControl();
+    log('Cagnottes de tous les joueurs réinitialisées.');
+  };
+
+  function buyItem(login, name, code){
+    const item = SHOP_ITEMS[code];
+    const w = ensureWallet(login, name);
+    if (!item || w.money < item.price) return false;
+    w.money -= item.price;
+    w.items[code] = (w.items[code] || 0) + 1;
+    saveWallets();
+    log(name + ' achète : ' + item.label + ' (-$' + item.price + '). Solde : $' + w.money);
+    sendToBroadcast({ type: 'toast', text: '🛒 ' + name + ' achète ' + item.label + ' !' });
+    return true;
+  }
+  function buyCosmetic(login, name, code){
+    const w = ensureWallet(login, name);
+    if (code === 'emoji') {
+      if (w.money < COSMETIC_PRICE) return false;
+      w.money -= COSMETIC_PRICE;
+      const emoji = EMOJI_POOL[Math.floor(Math.random() * EMOJI_POOL.length)];
+      w.emojis.push(emoji);
+      if (w.emojis.length > 3) w.emojis.shift();
+      saveWallets();
+      log(name + ' achète un émoji ' + emoji + ' (-$' + COSMETIC_PRICE + '). Solde : $' + w.money);
+      sendToBroadcast({ type: 'toast', text: '✨ ' + name + ' obtient l\'émoji ' + emoji + ' !' });
+      return true;
+    }
+    const cos = SHOP_COSMETICS[code];
+    if (!cos || w.cosmetics[code] || w.money < COSMETIC_PRICE) return false;
+    w.money -= COSMETIC_PRICE;
+    w.cosmetics[code] = true;
+    saveWallets();
+    log(name + ' achète : ' + cos.label + ' (-$' + COSMETIC_PRICE + '). Solde : $' + w.money);
+    sendToBroadcast({ type: 'toast', text: '✨ ' + name + ' débloque ' + cos.label + ' !' });
+    return true;
+  }
+
+  let state = {
+    phase: 'idle',
+    participants: {},   // login -> displayName, joined during inscription
+    alive: {},           // login -> { name, lives }, currently in the game
+    questions: [],        // [{q, a, keyword}]
+    qIndex: -1,
+    currentAnswers: {},   // login -> message
+    livesSetting: 3,
+    turnQueue: [],         // logins, in turn order, only used when turnMode is on
+    activeTurnLogin: null, // login whose turn it currently is
+    pendingBet: null,      // pari en attente de résolution (résolu après la prochaine question)
+  };
+
+  let timerHandle = null;
+
+  function normalize(s){
+    return (s||'').toString().trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/\s+/g,' ');
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function answerMatches(given, correctAnswer){
+    const normGiven = normalize(given);
+    const normCorrect = normalize(correctAnswer);
+    if (!normGiven) return false;
+    if (normGiven === normCorrect) return true;
+    const givenWords = normGiven.split(' ').filter(Boolean);
+    const correctWords = normCorrect.split(' ').filter(Boolean);
+    return correctWords.some(w => {
+      if (w.length <= 1) return false;
+      if (givenWords.includes(w)) return true; // mot exact isolé
+      // à partir de 4 lettres, on accepte aussi le mot collé à d'autres caractères
+      // (ex: "l'imprimerie" doit valider la réponse "imprimerie")
+      if (w.length >= 4 && normGiven.includes(w)) return true;
+      return false;
+    });
+  }
+
+  function log(msg, cls){
+    const box = document.getElementById('logBox');
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    const t = new Date().toLocaleTimeString();
+    line.textContent = `[${t}] ${msg}`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendToBroadcast(msg){
+    if (broadcastWin && !broadcastWin.closed) broadcastWin.postMessage(msg, '*');
+  }
+
+  function pushFullState(extra){
+    const payload = Object.assign({
+      phase: state.phase,
+      joined: Object.entries(state.participants).map(([login, name]) => ({ login, name })),
+      aliveCount: Object.keys(state.alive).length,
+      qIndex: state.qIndex + 1,
+      question: state.questions[state.qIndex] ? state.questions[state.qIndex].q : '',
+      answer: state.questions[state.qIndex] ? state.questions[state.qIndex].a : '',
+      activeTurnName: (state.activeTurnLogin && state.alive[state.activeTurnLogin]) ? state.alive[state.activeTurnLogin].name : null,
+      lastWinner: lastWinner,
+      lastWinnerLogin: lastWinnerLogin,
+      soloMode: soloMode,
+      betTargetName: state.pendingBet ? state.pendingBet.targetName : null,
+      leaderboard: getLeaderboard(),
+    }, extra || {});
+    sendToBroadcast({ type: 'state', state: payload });
+  }
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'broadcast-ready') pushFullState();
+  });
+
+  /* ---------- Twitch IRC (anonymous, read-only) ---------- */
+  function connectTwitch(channel){
+    channel = channel.trim().toLowerCase().replace(/^#/, '');
+    if (!channel) return;
+    if (ws) { try { ws.close(); } catch(e){} }
+    ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    ws.onopen = () => {
+      const anon = 'justinfan' + Math.floor(Math.random()*100000);
+      ws.send('CAP REQ :twitch.tv/tags');
+      ws.send('NICK ' + anon);
+      ws.send('JOIN #' + channel);
+    };
+    ws.onmessage = (event) => {
+      const lines = event.data.split('\r\n').filter(Boolean);
+      for (const raw of lines) {
+        if (raw.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); continue; }
+        if (raw.includes(' 001 ') || raw.toUpperCase().includes('JOIN')) {
+          setConnected(true, channel);
+        }
+        const parsed = parseIRC(raw);
+        if (parsed) handleChatMessage(parsed.login, parsed.displayName, parsed.message);
+      }
+    };
+    ws.onclose = () => setConnected(false);
+    ws.onerror = () => setConnected(false);
+  }
+
+  function parseIRC(raw){
+    let tags = {}, rest = raw;
+    if (raw.startsWith('@')) {
+      const idx = raw.indexOf(' ');
+      raw.slice(1, idx).split(';').forEach(t => { const [k,v]=t.split('='); tags[k]=v; });
+      rest = raw.slice(idx+1);
+    }
+    const m = rest.match(/^:(\w+)!\S+ PRIVMSG #\S+ :(.*)$/);
+    if (!m) return null;
+    return { login: m[1], displayName: tags['display-name'] || m[1], message: m[2] };
+  }
+
+  function setConnected(on, channel){
+    document.getElementById('statusDot').classList.toggle('on', on);
+    document.getElementById('statusText').textContent = on ? ('Connecté à #' + channel) : 'Non connecté';
+  }
+
+  /* ---------- Chat message handling ---------- */
+  function handleChatMessage(login, displayName, message){
+    const text = (message||'').trim();
+    if (state.hackState && login === state.hackState.hackerLogin) {
+      state.hackState.chars += text.trim().length;
+      return;
+    }
+    if (text.startsWith('!')) { handleBangCommand(login, displayName, text); return; }
+    if (state.phase === 'inscription' || state.phase === 'next_countdown') {
+      if (normalize(text) === 'go' && !state.participants[login]) {
+        state.participants[login] = displayName;
+        addMoney(login, displayName, 1, 'entrée en partie');
+        log(displayName + ' a rejoint la partie', 'go');
+        renderControl();
+        pushFullState();
+        checkInscriptionCountdown();
+      }
+    } else if (state.phase === 'question') {
+      if (turnMode) {
+        if (login === state.activeTurnLogin && state.currentAnswers[login] === undefined) {
+          state.currentAnswers[login] = text;
+          log(displayName + ' (à son tour) a répondu', 'ans');
+          renderControl();
+        }
+      } else if (state.alive[login] && state.currentAnswers[login] === undefined) {
+        state.currentAnswers[login] = text;
+        log(displayName + ' a répondu', 'ans');
+        renderControl();
+      }
+    } else if (state.phase === 'vote' && voteState && login === voteState.chooserLogin) {
+      const choice = normalize(text).toUpperCase();
+      if (['A','B','C'].includes(choice) && voteState.options.some(o => o.key === choice)) {
+        log(displayName + ' choisit l\'option ' + choice);
+        resolveVote(choice);
+      }
+    } else if (state.phase === 'duel_offer' && duelState && login === duelState.challengerLogin) {
+      const norm = normalize(text);
+      const tokens = norm.split(' ').filter(Boolean);
+      const letterTok = (tokens[0] || '').toUpperCase();
+      const numMatch = norm.match(/\d+/);
+      const amountArg = numMatch ? parseInt(numMatch[0], 10) : null;
+      if (duelState.solo) {
+        if (/\boui\b/.test(norm) || letterTok === 'A') {
+          log(displayName + ' tente sa chance en solo !');
+          resolveDuelChoice('SOLO', false, amountArg);
+        } else if (letterTok === 'D' || /\bnon\b/.test(norm)) {
+          log(displayName + ' refuse le duel.');
+          resolveDuelChoice(null, true);
+        }
+      } else if (letterTok === 'D' || /\bnon\b/.test(norm)) {
+        log(displayName + ' refuse le duel.');
+        resolveDuelChoice(null, true);
+      } else if (['A','B','C'].includes(letterTok) && duelState.options.some(o => o.key === letterTok)) {
+        log(displayName + ' choisit de défier l\'option ' + letterTok);
+        resolveDuelChoice(letterTok, false, amountArg);
+      }
+    } else if (state.phase === 'duel_call' && duelState && login === duelState.opponentLogin) {
+      const norm = normalize(text);
+      if (norm === 'pile' || norm === 'face') {
+        resolveDuelCall(norm);
+      }
+    } else if (state.phase === 'roulette_bet') {
+      if (state.alive[login] && state.rouletteBets && state.rouletteBets[login] === undefined) {
+        const norm = normalize(text);
+        let color = null;
+        if (/\brouge\b|\bred\b/.test(norm)) color = 'rouge';
+        else if (/\bnoir\b|\bblack\b/.test(norm)) color = 'noir';
+        else if (/\bvert\b|\bgreen\b/.test(norm)) color = 'vert';
+        const numMatch = norm.match(/\d+/);
+        if (color && numMatch) {
+          const w = ensureWallet(login, displayName);
+          let amount = parseInt(numMatch[0], 10);
+          if (amount > 0 && w.money > 0) {
+            if (amount > w.money) amount = w.money; // tapis : pas d'argent imaginaire
+            state.rouletteBets[login] = { color, amount, name: displayName };
+            log(displayName + ' mise $' + amount + ' sur ' + color, 'ans');
+            renderControl();
+          }
+        }
+      }
+    } else if (state.phase === 'bet_offer' && betState) {
+      if (state.alive[login] && login !== betState.targetLogin && betState.bets[login] === undefined) {
+        const norm = normalize(text);
+        if (norm === 'oui' || norm === 'non') {
+          betState.bets[login] = norm;
+          log(displayName + ' parie ' + norm.toUpperCase(), 'ans');
+          if (Object.keys(betState.bets).length >= Object.keys(state.alive).length - 1) closeBets();
+        }
+      }
+    } else if (state.phase === 'phrase_challenge' && phraseState) {
+      if (state.alive[login] && normalizePhrase(text) === phraseState.norm) {
+        log(displayName + ' a tapé la phrase le premier !', 'go');
+        resolvePhraseChallenge(login);
+      }
+    } else if (state.phase === 'spam_challenge' && spamState) {
+      if (state.alive[login] && normalizePhrase(text).split(' ').includes(spamState.norm)) {
+        spamState.counts[login] = (spamState.counts[login] || 0) + 1;
+        spamState.dirty = true;
+      }
+    } else if (state.phase === 'dilemma_offer' && dilemmaState && login === dilemmaState.chooserLogin) {
+      const choice = normalize(text).toUpperCase();
+      if (choice === 'A' || choice === 'B') {
+        log(displayName + ' choisit ' + choice + '.');
+        resolveDilemma(choice);
+      }
+    }
+  }
+
+  /* ---------- Catégories (blocs de questions) ---------- */
+  let categories = [];
+
+  function escHtml(s){ const d=document.createElement('div'); d.textContent = s==null?'':s; return d.innerHTML; }
+
+  let blockCounter = 0;
+  function addCategoryBlock(name){
+    blockCounter++;
+    const div = document.createElement('div');
+    div.className = 'cat-block';
+    div.innerHTML = `
+      <div class="cat-block-header">
+        <input type="text" class="cat-name-input" value="${escHtml(name || ('Catégorie ' + blockCounter))}">
+        <button class="btn btn-red cat-block-remove" type="button">Retirer</button>
+      </div>
+      <textarea class="cat-questions-input" placeholder="Question ? = Réponse"></textarea>
+    `;
+    document.getElementById('categoryBlocks').appendChild(div);
+  }
+
+  document.getElementById('categoryBlocks').addEventListener('click', (e) => {
+    if (e.target.classList.contains('cat-block-remove')) {
+      e.target.closest('.cat-block').remove();
+    }
+  });
+
+  document.getElementById('addCategoryBlockBtn').onclick = () => addCategoryBlock();
+
+  function saveCategoryBlocksToStorage(){
+    const blocks = document.querySelectorAll('#categoryBlocks .cat-block');
+    const data = Array.from(blocks).map(b => ({
+      name: b.querySelector('.cat-name-input').value,
+      text: b.querySelector('.cat-questions-input').value
+    }));
+    try { localStorage.setItem('superquizz_categoryBlocks', JSON.stringify(data)); } catch(e) {}
+  }
+
+  function loadCategoryBlocksFromStorage(){
+    try {
+      const raw = localStorage.getItem('superquizz_categoryBlocks');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data) || !data.length) return false;
+      data.forEach(item => {
+        addCategoryBlock(item.name);
+        const blocks = document.querySelectorAll('#categoryBlocks .cat-block');
+        blocks[blocks.length - 1].querySelector('.cat-questions-input').value = item.text || '';
+      });
+      return true;
+    } catch(e) { return false; }
+  }
+
+  /* ---------- Questions ---------- */
+  function loadAllQuestions(){
+    saveCategoryBlocksToStorage();
+    const blocks = document.querySelectorAll('#categoryBlocks .cat-block');
+    let allQs = [];
+    categories = [];
+    blocks.forEach(block => {
+      const name = block.querySelector('.cat-name-input').value.trim();
+      const raw = block.querySelector('.cat-questions-input').value;
+      const qs = raw.split('\n').map(l=>l.trim()).filter(Boolean).map(line => {
+        const parts = line.split('=');
+        const a = parts.pop();
+        const q = parts.join('=').trim();
+        return { q, a: (a||'').trim(), keyword: name || null };
+      }).filter(x => x.q && x.a);
+      if (qs.length && name && !categories.includes(name)) categories.push(name);
+      allQs = allQs.concat(qs);
+    });
+    state.questions = shuffle(allQs);
+    state.qIndex = -1;
+    document.getElementById('questionsStatus').textContent = allQs.length + ' question(s) chargée(s) sur ' + categories.length + ' catégorie(s), ordre mélangé';
+    log(allQs.length + ' questions chargées (ordre aléatoire, ' + categories.length + ' catégories)');
+  }
+  document.getElementById('loadQuestionsBtn').onclick = loadAllQuestions;
+
+  /* ---------- Connect ---------- */
+  document.getElementById('connectBtn').onclick = () => connectTwitch(document.getElementById('channelInput').value);
+
+  /* ---------- Test mode ---------- */
+  document.getElementById('testSendBtn').onclick = () => {
+    const u = document.getElementById('testUser').value.trim() || 'testeur';
+    const m = document.getElementById('testMsg').value;
+    handleChatMessage(u.toLowerCase(), u, m);
+  };
+
+  /* ---------- Open broadcast window ---------- */
+  document.getElementById('openBroadcastBtn').onclick = () => {
+    broadcastWin = window.open(location.pathname + '?view=broadcast', 'broadcast1contre100', 'width=1280,height=720');
+  };
+
+  /* ---------- Game flow ---------- */
+  let pendingInscriptionSecs = 30;
+  let countdownStarted = false;
+
+  function openInscriptions(phase, secs){
+    state.phase = phase;
+    state.participants = {};
+    countdownStarted = false;
+    pendingInscriptionSecs = secs;
+    document.getElementById('closeInscriptionBtn').disabled = false;
+    log('Inscriptions ouvertes — en attente d\'au moins ' + (soloMode ? '1 joueur (solo autorisé)' : '2 joueurs') + ' pour lancer le compte à rebours (' + secs + 's).');
+    pushFullState({ timeLeft: null });
+    renderControl();
+  }
+
+  function checkInscriptionCountdown(){
+    if (countdownStarted) return;
+    if (state.phase !== 'inscription' && state.phase !== 'next_countdown') return;
+    const threshold = soloMode ? 1 : 2;
+    if (Object.keys(state.participants).length >= threshold) {
+      countdownStarted = true;
+      log((threshold === 1 ? '1 joueur inscrit (partie solo)' : '2 joueurs inscrits') + ' : le compte à rebours démarre (' + pendingInscriptionSecs + 's).');
+      runCountdown(pendingInscriptionSecs, (left) => pushFullState({ timeLeft: left }), () => closeInscription());
+    }
+  }
+
+  document.getElementById('startInscriptionBtn').onclick = () => {
+    const secs = parseInt(document.getElementById('inscriptionSecs').value, 10) || 30;
+    openInscriptions('inscription', secs);
+  };
+
+  document.getElementById('closeInscriptionBtn').onclick = closeInscription;
+  function closeInscription(){
+    clearTimer();
+    const livesCount = Math.max(1, parseInt(document.getElementById('livesSetting').value, 10) || 3);
+    state.livesSetting = livesCount;
+    state.isSoloRun = Object.keys(state.participants).length === 1;
+    state.pendingBet = null;
+    eventGapCount = 0;
+    gapHadInterlude = false;
+    state.alive = {};
+    Object.keys(state.participants).forEach(login => {
+      state.alive[login] = { name: state.participants[login], lives: livesCount, streak: 0, sessionStart: ensureWallet(login, state.participants[login]).money };
+    });
+    state.turnQueue = turnMode ? shuffle(Object.keys(state.alive)) : [];
+    state.activeTurnLogin = null;
+    syncWalletBar();
+    document.getElementById('closeInscriptionBtn').disabled = true;
+    const aliveCount = Object.keys(state.alive).length;
+    document.getElementById('nextQuestionBtn').disabled = aliveCount < 1;
+    log('Inscriptions fermées : ' + aliveCount + ' joueur(s) en jeu. Partie en cours, plus de nouvelles inscriptions possibles.');
+    if (aliveCount > 0 && state.questions.length > 0) {
+      nextQuestion();
+    } else {
+      log('Impossible de démarrer : aucun joueur inscrit ou aucune question chargée.');
+      pushFullState();
+      renderControl();
+    }
+  }
+
+  document.getElementById('nextQuestionBtn').onclick = proceedToNextQuestion;
+  let voteState = null;
+  let skipNextVoteCheck = false;
+  let duelState = null;
+  let skipNextRouletteCheck = false;
+  // Événements aléatoires (pari, défis, dilemme)
+  const EVENT_MIN_GAP = 2;      // nombre minimum de questions entre deux événements aléatoires
+  let eventGapCount = EVENT_MIN_GAP;
+  let gapHadInterlude = false;  // un événement/interlude a déjà eu lieu avant la prochaine question
+  let betState = null, phraseState = null, spamState = null, dilemmaState = null;
+  let spamPushHandle = null;
+
+  function afterInterlude(){
+    if (autoMode) setTimeout(() => proceedToNextQuestion(), AUTO_PAUSE_MS);
+  }
+
+  function proceedToNextQuestion(){
+    if (skipNextVoteCheck) { skipNextVoteCheck = false; nextQuestion(); return; }
+    if (maybeStartDuel()) return;
+    const played = state.qIndex + 1;
+    if (!skipNextRouletteCheck && played > 0 && played % 8 === 0 && Object.keys(state.alive).length > 0) {
+      startRoulette();
+      return;
+    }
+    skipNextRouletteCheck = false;
+    if (played > 0 && played % 5 === 0 && Object.keys(state.alive).length > 1 && categories.length > 1) {
+      startVote();
+      return;
+    }
+    if (!gapHadInterlude && maybeStartRandomEvent()) return;
+    nextQuestion();
+  }
+
+  function startVote(){
+    const aliveLogins = Object.keys(state.alive);
+    if (categories.length < 2 || aliveLogins.length === 0) {
+      log('Pas assez de catégories différentes pour proposer un choix : on continue normalement.');
+      nextQuestion();
+      return;
+    }
+    gapHadInterlude = true;
+    const chooserLogin = aliveLogins[Math.floor(Math.random() * aliveLogins.length)];
+    const chooserName = state.alive[chooserLogin].name;
+    const letters = ['A','B','C'];
+    const picked = shuffle(categories).slice(0, 3);
+    const options = picked.map((cat, i) => ({ key: letters[i], category: cat }));
+
+    voteState = { chooserLogin, chooserName, options };
+    state.phase = 'vote';
+    const secs = 15;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    log(chooserName + ' doit choisir la prochaine catégorie : ' + options.map(o => o.key + ') ' + o.category).join(' — ') + ' (tape A, B ou C dans le chat)');
+    const voteExtra = { chooserName, voteOptions: options.map(o => ({ key: o.key, category: o.category })), totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, voteExtra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, voteExtra)), () => resolveVote(null));
+  }
+
+  function resolveVote(chosenKey){
+    clearTimer();
+    if (!voteState) return;
+    let key = chosenKey;
+    if (!key) {
+      const letters = voteState.options.map(o => o.key);
+      key = letters[Math.floor(Math.random() * letters.length)];
+      log('Pas de choix reçu à temps : sélection aléatoire (' + key + ').');
+    }
+    const chosen = voteState.options.find(o => o.key === key) || voteState.options[0];
+    log('Catégorie choisie : ' + chosen.category);
+    let foundIdx = -1;
+    for (let idx = state.qIndex + 1; idx < state.questions.length; idx++) {
+      if (state.questions[idx].keyword === chosen.category) { foundIdx = idx; break; }
+    }
+    if (foundIdx !== -1 && foundIdx !== state.qIndex + 1) {
+      const q = state.questions.splice(foundIdx, 1)[0];
+      state.questions.splice(state.qIndex + 1, 0, q);
+    } else if (foundIdx === -1) {
+      log('Aucune question de cette catégorie disponible pour le moment : la prochaine question suit l\'ordre normal.');
+    }
+    voteState = null;
+    skipNextVoteCheck = true;
+    document.getElementById('nextQuestionBtn').disabled = false;
+    pushFullState({ voteOptions: null, chooserName: null });
+    renderControl();
+    afterInterlude();
+  }
+
+  /* ---------- Duel pile ou face (après 2 vies perdues d'affilée) ---------- */
+  function findDuelCandidate(){
+    for (const login of Object.keys(state.alive)) {
+      if ((state.alive[login].streak || 0) >= 2) return login;
+    }
+    return null;
+  }
+
+  function pickDuelOpponents(challengerLogin){
+    const aliveOthers = Object.keys(state.alive).filter(l => l !== challengerLogin);
+    if (aliveOthers.length === 0) return [];
+    const board = getLeaderboard().filter(p => aliveOthers.includes(p.login));
+    let picks = board.slice(0, 3).map(p => p.login);
+    if (picks.length < 3) {
+      const remaining = shuffle(aliveOthers.filter(l => !picks.includes(l)));
+      for (const l of remaining) { if (picks.length >= 3) break; picks.push(l); }
+    }
+    return picks.map(l => ({ login: l, name: state.alive[l].name }));
+  }
+
+  function maybeStartDuel(){
+    const login = findDuelCandidate();
+    if (!login) return false;
+    return startDuelOffer(login);
+  }
+
+  function startDuelOffer(challengerLogin){
+    const challengerName = state.alive[challengerLogin].name;
+    const opponents = pickDuelOpponents(challengerLogin);
+    if (opponents.length === 0) {
+      if (state.isSoloRun) return startSoloDuelOffer(challengerLogin);
+      state.alive[challengerLogin].streak = 0;
+      return false;
+    }
+    gapHadInterlude = true;
+    const letters = ['A','B','C'];
+    const options = opponents.map((o,i) => ({ key: letters[i], login: o.login, name: o.name }));
+    duelState = { challengerLogin, challengerName, options, opponentLogin: null, opponentName: null };
+    state.phase = 'duel_offer';
+    const secs = 15;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    log(challengerName + ' a perdu 2 vies d\'affilée : défier un joueur à pile ou face pour récupérer une vie ? ' + options.map(o => o.key + ') ' + o.name).join(' — ') + ' — D) Non merci (tape A, B, C ou D dans le chat).');
+    const extra = { challengerName, duelOptions: options.map(o => ({ key: o.key, name: o.name })), totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, extra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, extra)), () => resolveDuelChoice(null));
+    return true;
+  }
+
+  function startSoloDuelOffer(challengerLogin){
+    const challengerName = state.alive[challengerLogin].name;
+    gapHadInterlude = true;
+    duelState = { challengerLogin, challengerName, solo: true };
+    state.phase = 'duel_offer';
+    const secs = 15;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    log(challengerName + ' a perdu 2 vies d\'affilée : tenter sa chance à pile ou face en solo pour récupérer une vie ? (tape OUI ou NON dans le chat).');
+    const extra = { challengerName, soloDuel: true, totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, extra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, extra)), () => resolveDuelChoice(null));
+    return true;
+  }
+
+  function resolveDuelChoice(key, explicit, amountArg){
+    clearTimer();
+    if (!duelState) return;
+    if (!key) {
+      log(explicit ? (duelState.challengerName + ' décline le duel : pas de duel, la partie continue.') : (duelState.challengerName + ' n\'a pas répondu à temps : pas de duel, la partie continue.'));
+      if (state.alive[duelState.challengerLogin]) state.alive[duelState.challengerLogin].streak = 0;
+      duelState = null;
+      document.getElementById('nextQuestionBtn').disabled = false;
+      pushFullState({ duelOptions: null, soloDuel: null, challengerName: null });
+      renderControl();
+      afterInterlude();
+      return;
+    }
+    if (key === 'SOLO') {
+      resolveSoloDuel();
+      return;
+    }
+    const w = ensureWallet(duelState.challengerLogin, duelState.challengerName);
+    let bet = (amountArg && amountArg > 0) ? amountArg : Math.min(100, w.money);
+    if (bet > w.money) bet = w.money; // tapis : jamais plus que ce que l'on possède
+    duelState.betAmount = bet;
+    const opp = duelState.options.find(o => o.key === key);
+    duelState.opponentLogin = opp.login;
+    duelState.opponentName = opp.name;
+    log(duelState.challengerName + ' défie ' + opp.name + ' à pile ou face pour $' + bet + ' !');
+    state.phase = 'duel_call';
+    const secs = 10;
+    const extra = { challengerName: duelState.challengerName, opponentName: opp.name, betAmount: bet, totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, extra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, extra)), () => resolveDuelCall(null));
+  }
+
+  function resolveSoloDuel(){
+    clearTimer();
+    if (!duelState) return;
+    const challengerLogin = duelState.challengerLogin;
+    const challengerName = duelState.challengerName;
+    const cap = state.livesSetting;
+    state.phase = 'duel_flip';
+    const finalCall = Math.random() < 0.5 ? 'pile' : 'face';
+    const result = Math.random() < 0.5 ? 'pile' : 'face';
+    const won = result === finalCall;
+    log(challengerName + ' tente sa chance en solo : la pièce tombe sur ' + result + ' (appel : ' + finalCall + ').');
+
+    // Étape A : la pièce tourne seule.
+    pushFullState({ challengerName, soloDuel: true, call: finalCall });
+    renderControl();
+
+    timerHandle = setTimeout(() => {
+      // Étape B : résultat annoncé clairement, sans toucher aux vies.
+      pushFullState({ challengerName, soloDuel: true, call: finalCall, result, soloWon: won, winnerName: won ? challengerName : null });
+      renderControl();
+
+      timerHandle = setTimeout(() => {
+        // Étape C : vies actuelles, immobiles.
+        const before = state.alive[challengerLogin] ? [{ name: challengerName, lives: state.alive[challengerLogin].lives, maxLives: cap }] : [];
+        pushFullState({ showHearts: true, duelPlayers: before });
+        renderControl();
+
+        timerHandle = setTimeout(() => {
+          // Étape D : on applique le résultat et on anime les vies.
+          const afterPlayers = [];
+          if (state.alive[challengerLogin]) {
+            const p = state.alive[challengerLogin];
+            if (won) {
+              p.lives = Math.min(cap, p.lives + 1);
+              afterPlayers.push({ name: challengerName, lives: p.lives, maxLives: cap, anim: { gainedFrom: p.lives - 1 } });
+              log(challengerName + ' remporte son pari solo et récupère une vie (' + p.lives + '/' + cap + ').');
+            } else {
+              afterPlayers.push({ name: challengerName, lives: p.lives, maxLives: cap });
+              log(challengerName + ' perd son pari solo : pas de vie récupérée.');
+            }
+            p.streak = 0;
+          }
+          pushFullState({ showHearts: true, duelPlayers: afterPlayers });
+          renderControl();
+          duelState = null;
+
+          timerHandle = setTimeout(() => {
+            if (checkRoundOutcome()) return;
+            document.getElementById('nextQuestionBtn').disabled = false;
+            afterInterlude();
+          }, 2000);
+        }, 1000);
+      }, 2000);
+    }, 1300);
+  }
+
+  function resolveDuelCall(call){
+    clearTimer();
+    if (!duelState) return;
+    const finalCall = call || (Math.random() < 0.5 ? 'pile' : 'face');
+    if (!call) log(duelState.opponentName + ' n\'a pas répondu : côté choisi au hasard (' + finalCall + ').');
+    const result = Math.random() < 0.5 ? 'pile' : 'face';
+    const challengerWins = result !== finalCall;
+    state.phase = 'duel_flip';
+    log('La pièce tombe sur ' + result + ' (' + duelState.opponentName + ' avait appelé ' + finalCall + ').');
+
+    const winnerLogin = challengerWins ? duelState.challengerLogin : duelState.opponentLogin;
+    const winnerName = challengerWins ? duelState.challengerName : duelState.opponentName;
+    const loserLogin = challengerWins ? duelState.opponentLogin : duelState.challengerLogin;
+    const loserName = challengerWins ? duelState.opponentName : duelState.challengerName;
+    const betAmount = duelState.betAmount || 0;
+    const challengerLoginRef = duelState.challengerLogin;
+
+    // Étape A : la pièce tourne, aucun résultat affiché encore.
+    pushFullState({ challengerName: duelState.challengerName, opponentName: duelState.opponentName, call: finalCall });
+    renderControl();
+
+    timerHandle = setTimeout(() => {
+      // Étape B : la pièce est retombée, on annonce clairement le vainqueur (sans toucher à l'argent).
+      pushFullState({ challengerName: duelState.challengerName, opponentName: duelState.opponentName, call: finalCall, result, winnerName, loserName, betAmount });
+      renderControl();
+
+      timerHandle = setTimeout(() => {
+        // Étape C : soldes actuels, immobiles, avant tout transfert.
+        const winnerW = ensureWallet(winnerLogin, winnerName);
+        const loserW = ensureWallet(loserLogin, loserName);
+        const before = [
+          { login: winnerLogin, name: winnerName, money: winnerW.money },
+          { login: loserLogin, name: loserName, money: loserW.money },
+        ];
+        pushFullState({ moneyEvent: true, moneyPlayers: before });
+        renderControl();
+
+        timerHandle = setTimeout(() => {
+          // Étape D : transfert d'argent du perdant vers le gagnant, banqueroute si le perdant ne peut pas payer.
+          const paid = Math.min(betAmount, loserW.money);
+          const bankrupt = paid < betAmount;
+          if (paid > 0) {
+            addMoney(loserLogin, loserName, -paid, null);
+            addMoney(winnerLogin, winnerName, paid, null);
+          }
+          let bankruptEliminated = false;
+          if (bankrupt && state.alive[loserLogin]) {
+            state.alive[loserLogin].lives -= 1;
+            bankruptEliminated = state.alive[loserLogin].lives <= 0;
+            log(loserName + ' fait banqueroute (ne peut payer que $' + paid + ' sur $' + betAmount + ') et perd une vie' + (bankruptEliminated ? ' : éliminé(e) !' : ' (' + state.alive[loserLogin].lives + ' restante(s)).'));
+            if (bankruptEliminated) eliminatePlayer(loserLogin);
+          } else {
+            log(winnerName + ' remporte $' + paid + ' de la cagnotte de ' + loserName + ' !');
+          }
+          if (state.alive[challengerLoginRef]) state.alive[challengerLoginRef].streak = 0;
+
+          const after = [
+            { login: winnerLogin, name: winnerName, money: winnerW.money, delta: paid },
+            { login: loserLogin, name: loserName, money: loserW.money, delta: -paid, eliminated: bankruptEliminated, bankrupt: bankrupt },
+          ];
+          pushFullState({ moneyEvent: true, moneyPlayers: after });
+          renderControl();
+          duelState = null;
+
+          // Étape E : on laisse le résultat bien visible avant de continuer.
+          timerHandle = setTimeout(() => {
+            if (checkRoundOutcome()) return;
+            document.getElementById('nextQuestionBtn').disabled = false;
+            afterInterlude();
+          }, 2000);
+        }, 1000);
+      }, 2000);
+    }, 1300);
+  }
+
+  /* ---------- Roulette (tous les 8 questions) ---------- */
+  const ROULETTE_MULTIPLIER = { rouge: 2, noir: 2, vert: 14 };
+
+  function startRoulette(){
+    gapHadInterlude = true;
+    state.rouletteBets = {};
+    state.phase = 'roulette_bet';
+    const secs = 15;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    log('Envie de tenter ta chance à la roulette ? Écris un montant suivi de la couleur dans le chat, ex: 200 noir (' + secs + 's).');
+    pushFullState({ timeLeft: secs, totalTime: secs, rouletteBetsCount: 0 });
+    renderControl();
+    runCountdown(secs, (left) => pushFullState({ timeLeft: left, totalTime: secs, rouletteBetsCount: Object.keys(state.rouletteBets).length }), () => spinRoulette());
+  }
+
+  function spinRoulette(){
+    clearTimer();
+    // Vraie roulette européenne : 37 cases, 18 rouges, 18 noires, 1 seule verte (le zéro).
+    const pocket = Math.floor(Math.random() * 37);
+    const result = pocket === 0 ? 'vert' : (pocket <= 18 ? 'rouge' : 'noir');
+    state.phase = 'roulette_spin';
+    log('La roulette tourne...');
+    pushFullState({ rouletteResult: result });
+    renderControl();
+    timerHandle = setTimeout(() => finishRoulette(result), 6500);
+  }
+
+  function finishRoulette(result){
+    const bettors = Object.keys(state.rouletteBets || {}).map(login => {
+      const bet = state.rouletteBets[login];
+      const nameNow = state.alive[login] ? state.alive[login].name : bet.name;
+      const w = ensureWallet(login, nameNow);
+      return { login, name: w.name, color: bet.color, amount: bet.amount, moneyBefore: w.money };
+    });
+
+    state.phase = 'roulette_result';
+    const before = bettors.map(b => ({ login: b.login, name: b.name, money: b.moneyBefore }));
+    pushFullState({ rouletteResult: result, moneyEvent: true, moneyPlayers: before });
+    renderControl();
+
+    timerHandle = setTimeout(() => {
+      const after = [];
+      bettors.forEach(b => {
+        if (b.color === result) {
+          const winnings = b.amount * ROULETTE_MULTIPLIER[b.color];
+          const newMoney = addMoney(b.login, b.name, winnings, null);
+          log(b.name + ' avait misé $' + b.amount + ' sur ' + b.color + ' et gagne $' + winnings + ' ! Solde : $' + newMoney);
+          after.push({ login: b.login, name: b.name, money: newMoney, delta: winnings });
+        } else {
+          const newMoney = addMoney(b.login, b.name, -b.amount, null);
+          log(b.name + ' avait misé $' + b.amount + ' sur ' + b.color + ' et perd sa mise. Solde : $' + newMoney);
+          after.push({ login: b.login, name: b.name, money: newMoney, delta: -b.amount });
+        }
+      });
+      pushFullState({ rouletteResult: result, moneyEvent: true, moneyPlayers: after });
+      renderControl();
+
+      timerHandle = setTimeout(() => {
+        document.getElementById('nextQuestionBtn').disabled = false;
+        skipNextRouletteCheck = true;
+        afterInterlude();
+      }, 2000);
+    }, 1000);
+  }
+
+  /* ---------- Événements aléatoires : pari, défis, dilemme ---------- */
+  const CHALLENGE_PHRASES = [
+    'Le super quizz est le meilleur jeu du stream',
+    'Je suis le plus rapide du chat',
+    'Trois petits chats chapeau de paille',
+    'Vive la culture générale',
+    'Ce soir je gagne une vie',
+    'Les carottes sont cuites',
+    'Un joueur averti en vaut deux',
+    'Je tape plus vite que mon ombre',
+    'Rira bien qui rira le dernier',
+    'Le chat est le roi du quizz'
+  ];
+  const SPAM_WORDS = ['pomme','banane','fraise','cerise','poire','vache','cochon','poule','mouton','canard'];
+
+  function normalizePhrase(s){
+    return normalize(s).replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  // Affiche les vies "avant" (immobiles 1s), applique les changements et anime, puis laisse 2s de lecture.
+  function runLifeEvent(cfg){
+    state.phase = 'event_result';
+    const base = () => Object.assign({ eventTitle: cfg.title, eventText: cfg.text, eventSubtext: cfg.subtext || null }, cfg.extra || {});
+    pushFullState(Object.assign(base(), { eventPlayers: cfg.before }));
+    renderControl();
+    const hasPlayers = cfg.before.length > 0;
+    timerHandle = setTimeout(() => {
+      const after = cfg.apply();
+      pushFullState(Object.assign(base(), { eventPlayers: after }));
+      renderControl();
+      timerHandle = setTimeout(() => cfg.onDone(), hasPlayers ? 2000 : 1500);
+    }, hasPlayers ? 1000 : 1500);
+  }
+
+  function endInterludeEvent(){
+    if (checkRoundOutcome()) return;
+    document.getElementById('nextQuestionBtn').disabled = false;
+    afterInterlude();
+  }
+
+  function eventPool(){
+    const aliveCount = Object.keys(state.alive).length;
+    const pool = [];
+    if (document.getElementById('evBet').checked && aliveCount >= 2) pool.push('bet');
+    if (document.getElementById('evPhrase').checked && aliveCount >= 1) pool.push('phrase');
+    if (document.getElementById('evSpam').checked && aliveCount >= 1) pool.push('spam');
+    if (document.getElementById('evDilemma').checked && aliveCount >= 2) pool.push('dilemma');
+    return pool;
+  }
+
+  function maybeStartRandomEvent(){
+    const chance = Math.max(0, Math.min(100, parseFloat(document.getElementById('eventChance').value) || 0));
+    if (chance <= 0 || eventGapCount < EVENT_MIN_GAP) return false;
+    if (Math.random() * 100 >= chance) return false;
+    const pool = eventPool();
+    if (!pool.length) return false;
+    startEvent(pool[Math.floor(Math.random() * pool.length)]);
+    return true;
+  }
+
+  function startEvent(kind){
+    gapHadInterlude = true;
+    eventGapCount = 0;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    if (kind === 'bet') startBet();
+    else if (kind === 'phrase') startPhraseChallenge();
+    else if (kind === 'spam') startSpamChallenge();
+    else startDilemma();
+  }
+
+  /* --- 1. Pari : le prochain joueur va-t-il répondre correctement ? --- */
+  function startBet(){
+    const aliveLogins = Object.keys(state.alive);
+    let targetLogin;
+    if (turnMode) {
+      state.turnQueue = state.turnQueue.filter(l => state.alive[l]);
+      if (state.turnQueue.length === 0) state.turnQueue = shuffle(aliveLogins);
+      targetLogin = state.turnQueue[0];
+    } else {
+      targetLogin = aliveLogins[Math.floor(Math.random() * aliveLogins.length)];
+    }
+    betState = { targetLogin, targetName: state.alive[targetLogin].name, bets: {} };
+    state.phase = 'bet_offer';
+    const secs = 15;
+    log(`PARI : ${betState.targetName} va-t-il répondre correctement à la prochaine question ? Les autres joueurs tapent OUI ou NON dans le chat (${secs}s).`);
+    const extra = () => ({ betTargetName: betState.targetName, betsCount: Object.keys(betState.bets).length, totalTime: secs });
+    pushFullState(Object.assign({ timeLeft: secs }, extra()));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, betState ? extra() : {})), () => closeBets());
+  }
+
+  function closeBets(){
+    clearTimer();
+    if (!betState) return;
+    const count = Object.keys(betState.bets).length;
+    if (count > 0) {
+      state.pendingBet = { targetLogin: betState.targetLogin, targetName: betState.targetName, bets: betState.bets, targetCorrect: false };
+      log(`${count} pari(s) enregistré(s) sur ${betState.targetName}.`);
+    } else {
+      log('Aucun pari enregistré : la partie continue normalement.');
+    }
+    betState = null;
+    nextQuestion();
+  }
+
+  function resolveBet(done){
+    const pb = state.pendingBet;
+    state.pendingBet = null;
+    if (!pb) { done(); return; }
+    const cap = state.livesSetting;
+    const bettors = Object.keys(pb.bets).filter(l => state.alive[l]);
+    if (!bettors.length) { log('Pari sans joueur encore en jeu : rien à résoudre.'); done(); return; }
+    const targetCorrect = !!pb.targetCorrect;
+    log(`Résultat du pari : ${pb.targetName} ${targetCorrect ? 'a répondu correctement.' : `s'est trompé.`}`);
+    runLifeEvent({
+      title: 'PARI',
+      text: `${pb.targetName} ${targetCorrect ? 'a répondu correctement !' : `s'est trompé !`}`,
+      subtext: 'Bon pronostic : +1 vie · Mauvais pronostic : -1 vie',
+      before: bettors.map(l => ({ name: state.alive[l].name, lives: state.alive[l].lives, maxLives: cap })),
+      apply: () => {
+        const after = [];
+        bettors.forEach(l => {
+          const p = state.alive[l];
+          if (!p) return;
+          const won = (pb.bets[l] === 'oui') === targetCorrect;
+          if (won) {
+            const b = p.lives;
+            p.lives = Math.min(cap, p.lives + 1);
+            after.push({ name: p.name, lives: p.lives, maxLives: cap, anim: p.lives > b ? { gainedFrom: b } : null });
+            log(`${p.name} a bien pronostiqué : +1 vie (${p.lives}/${cap}).`);
+          } else {
+            p.lives -= 1;
+            const eliminated = p.lives <= 0;
+            after.push({ name: p.name, lives: p.lives, maxLives: cap, eliminated, anim: { lostIndex: p.lives } });
+            log(`${p.name} s'est trompé de pronostic : ${eliminated ? 'éliminé(e).' : `-1 vie (${p.lives} restante(s)).`}`);
+            if (eliminated) eliminatePlayer(l);
+          }
+        });
+        return after;
+      },
+      onDone: done
+    });
+  }
+
+  /* --- 2. Défi : le premier qui tape la phrase gagne une vie --- */
+  function startPhraseChallenge(){
+    const phrase = CHALLENGE_PHRASES[Math.floor(Math.random() * CHALLENGE_PHRASES.length)];
+    phraseState = { phrase, norm: normalizePhrase(phrase) };
+    state.phase = 'phrase_challenge';
+    const secs = 20;
+    log(`DÉFI : le premier qui tape « ${phrase} » gagne une vie (${secs}s).`);
+    const extra = { challengePhrase: phrase, totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, extra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, extra)), () => resolvePhraseChallenge(null));
+  }
+
+  function resolvePhraseChallenge(winnerLogin){
+    clearTimer();
+    if (!phraseState) return;
+    phraseState = null;
+    const cap = state.livesSetting;
+    const p = winnerLogin ? state.alive[winnerLogin] : null;
+    if (!p) {
+      log(`Personne n'a relevé le défi.`);
+      runLifeEvent({ title: 'DÉFI', text: `Personne n'a relevé le défi…`, before: [], apply: () => [], onDone: endInterludeEvent });
+      return;
+    }
+    runLifeEvent({
+      title: 'DÉFI',
+      text: `${p.name} a tapé la phrase le premier !`,
+      subtext: '+1 vie',
+      before: [{ name: p.name, lives: p.lives, maxLives: cap }],
+      apply: () => {
+        const b = p.lives;
+        p.lives = Math.min(cap, p.lives + 1);
+        log(`${p.name} gagne le défi : ${p.lives}/${cap} vies.`);
+        return [{ name: p.name, lives: p.lives, maxLives: cap, anim: p.lives > b ? { gainedFrom: b } : null }];
+      },
+      onDone: endInterludeEvent
+    });
+  }
+
+  /* --- 3. Défi : spammer un mot pendant 10 secondes --- */
+  function spamRanking(){
+    if (!spamState) return [];
+    return Object.entries(spamState.counts)
+      .filter(([l]) => state.alive[l])
+      .map(([l, count]) => ({ login: l, name: state.alive[l].name, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  function startSpamChallenge(){
+    const word = SPAM_WORDS[Math.floor(Math.random() * SPAM_WORDS.length)];
+    spamState = { word, norm: normalizePhrase(word), counts: {}, dirty: false, timeLeft: 10 };
+    state.phase = 'spam_challenge';
+    const secs = 10;
+    log(`DÉFI SPAM : spammer « ${word} » dans le chat pendant ${secs}s, le plus actif gagne une vie.`);
+    const payload = () => ({ spamWord: word, spamTop3: spamRanking().slice(0, 3).map(p => ({ name: p.name, count: p.count })), totalTime: secs });
+    pushFullState(Object.assign({ timeLeft: secs }, payload()));
+    renderControl();
+    spamPushHandle = setInterval(() => {
+      if (spamState && spamState.dirty) {
+        spamState.dirty = false;
+        pushFullState(Object.assign({ timeLeft: spamState.timeLeft }, payload()));
+      }
+    }, 250);
+    runCountdown(secs, (left) => {
+      if (!spamState) return;
+      spamState.timeLeft = left;
+      pushFullState(Object.assign({ timeLeft: left }, payload()));
+    }, () => resolveSpamChallenge());
+  }
+
+  function resolveSpamChallenge(){
+    clearTimer();
+    if (spamPushHandle) { clearInterval(spamPushHandle); spamPushHandle = null; }
+    if (!spamState) return;
+    const cap = state.livesSetting;
+    const ranking = spamRanking();
+    const top3 = ranking.slice(0, 3).map(p => ({ name: p.name, count: p.count }));
+    spamState = null;
+    const max = ranking.length ? ranking[0].count : 0;
+    if (max <= 0) {
+      log('Personne n\'a spammé le mot.');
+      runLifeEvent({ title: 'DÉFI SPAM', text: `Personne n'a spammé le mot !`, before: [], apply: () => [], extra: { spamTop3: [] }, onDone: endInterludeEvent });
+      return;
+    }
+    const winners = ranking.filter(p => p.count === max);
+    const names = winners.map(w => w.name).join(', ');
+    runLifeEvent({
+      title: 'DÉFI SPAM',
+      text: winners.length === 1 ? `${names} gagne avec ${max} fois !` : `Égalité ! ${names} gagnent avec ${max} fois chacun !`,
+      subtext: '+1 vie',
+      extra: { spamTop3: top3 },
+      before: winners.map(w => ({ name: w.name, lives: state.alive[w.login].lives, maxLives: cap })),
+      apply: () => winners.map(w => {
+        const p = state.alive[w.login];
+        const b = p.lives;
+        p.lives = Math.min(cap, p.lives + 1);
+        log(`${p.name} gagne le défi spam (${max} fois) : ${p.lives}/${cap} vies.`);
+        return { name: p.name, lives: p.lives, maxLives: cap, anim: p.lives > b ? { gainedFrom: b } : null };
+      }),
+      onDone: endInterludeEvent
+    });
+  }
+
+  /* --- 4. Dilemme : tout le monde gagne une vie OU une personne au hasard en perd une --- */
+  function startDilemma(){
+    const aliveLogins = Object.keys(state.alive);
+    const chooserLogin = aliveLogins[Math.floor(Math.random() * aliveLogins.length)];
+    dilemmaState = { chooserLogin, chooserName: state.alive[chooserLogin].name };
+    state.phase = 'dilemma_offer';
+    const secs = 15;
+    log(`DILEMME : ${dilemmaState.chooserName} choisit — A) tout le monde gagne une vie, B) une personne au hasard perd une vie (peut-être lui). Il tape A ou B dans le chat (${secs}s).`);
+    const extra = { chooserName: dilemmaState.chooserName, totalTime: secs };
+    pushFullState(Object.assign({ timeLeft: secs }, extra));
+    renderControl();
+    runCountdown(secs, (left) => pushFullState(Object.assign({ timeLeft: left }, extra)), () => resolveDilemma(null));
+  }
+
+  function resolveDilemma(choice){
+    clearTimer();
+    if (!dilemmaState) return;
+    const chooserName = dilemmaState.chooserName;
+    dilemmaState = null;
+    if (!choice) {
+      choice = Math.random() < 0.5 ? 'A' : 'B';
+      log(`${chooserName} n'a pas répondu à temps : choix aléatoire (${choice}).`);
+    }
+    const cap = state.livesSetting;
+    const logins = Object.keys(state.alive);
+    if (choice === 'A') {
+      runLifeEvent({
+        title: 'DILEMME',
+        text: `${chooserName} a choisi : tout le monde gagne une vie !`,
+        before: logins.map(l => ({ name: state.alive[l].name, lives: state.alive[l].lives, maxLives: cap })),
+        apply: () => {
+          log('Dilemme : tout le monde gagne une vie.');
+          return logins.map(l => {
+            const p = state.alive[l];
+            const b = p.lives;
+            p.lives = Math.min(cap, p.lives + 1);
+            return { name: p.name, lives: p.lives, maxLives: cap, anim: p.lives > b ? { gainedFrom: b } : null };
+          });
+        },
+        onDone: endInterludeEvent
+      });
+    } else {
+      const victimLogin = logins[Math.floor(Math.random() * logins.length)];
+      const v = state.alive[victimLogin];
+      runLifeEvent({
+        title: 'DILEMME',
+        text: `${chooserName} a choisi : une personne au hasard perd une vie… c'est ${v.name} !`,
+        before: [{ name: v.name, lives: v.lives, maxLives: cap }],
+        apply: () => {
+          v.lives -= 1;
+          const eliminated = v.lives <= 0;
+          log(`Dilemme : ${v.name} perd une vie ${eliminated ? '(éliminé(e)).' : `(${v.lives} restante(s)).`}`);
+          if (eliminated) eliminatePlayer(victimLogin);
+          return [{ name: v.name, lives: v.lives, maxLives: cap, eliminated, anim: { lostIndex: v.lives } }];
+        },
+        onDone: endInterludeEvent
+      });
+    }
+  }
+
+
+  /* ---------- Objets : commandes chat et effets ---------- */
+  function handleBangCommand(login, displayName, text){
+    const parts = normalizePhrase(text.slice(1)).split(' ').filter(Boolean);
+    const code = parts[0] || '';
+    const words = parts.slice(1);
+    if (state.phase === 'inscription' || state.phase === 'next_countdown') {
+      if (SHOP_ITEMS[code]) { if (buyItem(login, displayName, code)) renderControl(); return; }
+      if (SHOP_COSMETICS[code]) { if (buyCosmetic(login, displayName, code)) renderControl(); return; }
+    }
+    if (code === 'piece') { useCoinItem(login, displayName); return; }
+    if (code === 'joker') { useJokerItem(login, displayName); return; }
+    if (code === 'pistolet') { usePistolItem(login, displayName, words); return; }
+    if (code === 'hack') { useHackItem(login, displayName, words); return; }
+    if (code === 'difficile') { useHardQuestionItem(login, displayName, words); return; }
+    if (code === 'cashout') { useCashoutItem(login, displayName); return; }
+  }
+
+  function useCashoutItem(login, displayName){
+    if (!state.alive[login]) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.cashout) return;
+    w.items.cashout -= 1;
+    saveWallets();
+    const amount = w.money;
+    log(displayName + ' utilise Cashout et quitte la partie en conservant $' + amount + ' !');
+    sendToBroadcast({ type: 'toast', text: '💰 ' + displayName + ' encaisse $' + amount + ' et quitte la partie !' });
+    delete state.alive[login];
+    syncWalletBar();
+    renderControl();
+    pushFullState();
+    if (state.phase !== 'question') {
+      checkRoundOutcome();
+    }
+  }
+
+  function resolveTargetLogin(words, excludeLogin){
+    const query = normalizePhrase(words.join(' '));
+    if (!query) return null;
+    const candidates = Object.keys(state.alive).filter(l => l !== excludeLogin);
+    let found = candidates.find(l => normalizePhrase(state.alive[l].name) === query);
+    if (!found) found = candidates.find(l => normalizePhrase(state.alive[l].name).startsWith(query) || query.startsWith(normalizePhrase(state.alive[l].name)));
+    return found || null;
+  }
+
+  function useCoinItem(login, displayName){
+    if (state.phase !== 'question') return;
+    if (!state.alive[login] || state.currentAnswers[login] !== undefined) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.piece) return;
+    w.items.piece -= 1;
+    saveWallets();
+    const win = Math.random() < 0.5;
+    state.coinFlipOverride = state.coinFlipOverride || {};
+    state.coinFlipOverride[login] = win;
+    state.currentAnswers[login] = win ? '__PIECE_PILE__' : '__PIECE_FACE__';
+    log(displayName + ' utilise une Pièce : ' + (win ? 'PILE, gagné !' : 'FACE, perdu !'));
+    sendToBroadcast({ type: 'toast', text: '🪙 ' + displayName + ' lance une Pièce : ' + (win ? 'PILE !' : 'FACE…') });
+    renderControl();
+  }
+
+  function useJokerItem(login, displayName){
+    if (state.phase !== 'question') return;
+    if (!state.alive[login]) return;
+    if (turnMode && login !== state.activeTurnLogin) return;
+    if (!turnMode && state.currentAnswers[login] !== undefined) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.joker) return;
+    const others = Object.keys(state.alive).filter(l => l !== login);
+    if (!others.length) return;
+    w.items.joker -= 1;
+    saveWallets();
+    const targetLogin = others[Math.floor(Math.random() * others.length)];
+    const targetName = state.alive[targetLogin].name;
+    if (turnMode) {
+      state.activeTurnLogin = targetLogin;
+      log(displayName + ' utilise un Joker et file sa question à ' + targetName + ' !');
+      pushFullState();
+    } else {
+      state.exemptLogins = state.exemptLogins || {};
+      state.exemptLogins[login] = true;
+      state.doublePenalty = state.doublePenalty || {};
+      state.doublePenalty[targetLogin] = true;
+      log(displayName + ' utilise un Joker : ' + targetName + ' héritera d\'une pénalité double en cas d\'erreur !');
+    }
+    sendToBroadcast({ type: 'toast', text: '🃏 ' + displayName + ' utilise un Joker !' });
+    renderControl();
+  }
+
+  function usePistolItem(login, displayName, words){
+    if (!state.alive[login]) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.pistolet) return;
+    const targetLogin = resolveTargetLogin(words, login);
+    if (!targetLogin) return;
+    w.items.pistolet -= 1;
+    saveWallets();
+    const target = state.alive[targetLogin];
+    target.lives -= 1;
+    const eliminated = target.lives <= 0;
+    log(displayName + ' tire sur ' + target.name + ' ! ' + (eliminated ? 'Éliminé(e) (0 vie).' : '-1 vie (' + target.lives + ' restante(s)).'));
+    sendToBroadcast({ type: 'toast', text: '🔫 ' + displayName + ' tire sur ' + target.name + (eliminated ? ' : éliminé(e) !' : ' : -1 vie !') });
+    if (eliminated) {
+      eliminatePlayer(targetLogin);
+      addMoney(login, displayName, 100, 'a éliminé ' + target.name);
+    }
+    renderControl();
+    pushFullState();
+  }
+
+  function useHackItem(login, displayName, words){
+    if (!state.alive[login]) return;
+    if (state.hackState) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.hack) return;
+    const targetLogin = resolveTargetLogin(words, login);
+    if (!targetLogin || targetLogin === login) return;
+    w.items.hack -= 1;
+    saveWallets();
+    const targetName = state.alive[targetLogin].name;
+    state.hackState = { hackerLogin: login, hackerName: displayName, targetLogin, targetName, chars: 0 };
+    log(displayName + ' hacke ' + targetName + ' pendant 10 secondes !');
+    sendToBroadcast({ type: 'toast', text: '💻 ' + displayName + ' hacke ' + targetName + ' pendant 10s (tape des caractères au hasard) !' });
+    renderControl();
+    setTimeout(() => finishHack(), 10000);
+  }
+
+  function finishHack(){
+    const h = state.hackState;
+    if (!h) return;
+    state.hackState = null;
+    const targetWallet = ensureWallet(h.targetLogin, h.targetName);
+    const stolen = Math.max(0, Math.min(h.chars, targetWallet.money));
+    if (stolen > 0) {
+      targetWallet.money -= stolen;
+      saveWallets();
+      addMoney(h.hackerLogin, h.hackerName, stolen, 'a hacké ' + h.targetName);
+    } else {
+      log(h.hackerName + ' n\'a rien pu voler à ' + h.targetName + '.');
+    }
+    sendToBroadcast({ type: 'toast', text: '💻 ' + h.hackerName + ' vole $' + stolen + ' à ' + h.targetName + ' !' });
+    renderControl();
+  }
+
+  function useHardQuestionItem(login, displayName, words){
+    if (!state.alive[login]) return;
+    const w = ensureWallet(login, displayName);
+    if (!w.items.difficile) return;
+    const targetLogin = resolveTargetLogin(words, login);
+    if (!targetLogin) return;
+    w.items.difficile -= 1;
+    saveWallets();
+    state.doublePenalty = state.doublePenalty || {};
+    state.doublePenalty[targetLogin] = true;
+    log(displayName + ' utilise Question difficile sur ' + state.alive[targetLogin].name + ' !');
+    sendToBroadcast({ type: 'toast', text: '❗ ' + displayName + ' inflige une question difficile à ' + state.alive[targetLogin].name + ' !' });
+    renderControl();
+  }
+
+  function nextQuestion(){
+    if (state.qIndex + 1 >= state.questions.length) { log('Plus de questions dans la liste.'); return; }
+    state.qIndex += 1;
+    state.currentAnswers = {};
+    state.coinFlipOverride = {};
+    state.exemptLogins = {};
+    state.phase = 'question';
+    gapHadInterlude = false;
+    eventGapCount++;
+    if (turnMode) {
+      state.turnQueue = state.turnQueue.filter(l => state.alive[l]);
+      if (state.turnQueue.length === 0) {
+        state.turnQueue = shuffle(Object.keys(state.alive));
+      }
+      state.activeTurnLogin = state.turnQueue.length ? state.turnQueue[0] : null;
+      if (state.activeTurnLogin) log('C\'est au tour de ' + state.alive[state.activeTurnLogin].name + '.');
+    } else {
+      state.activeTurnLogin = null;
+    }
+    const secs = parseInt(document.getElementById('questionSecs').value, 10) || 20;
+    document.getElementById('revealNowBtn').disabled = false;
+    document.getElementById('nextQuestionBtn').disabled = true;
+    log('Question ' + (state.qIndex+1) + ' lancée (' + secs + 's) : ' + state.questions[state.qIndex].q);
+    pushFullState({ timeLeft: secs, totalTime: secs });
+    runCountdown(secs, (left) => pushFullState({ timeLeft: left, totalTime: secs }), () => revealAnswer());
+    renderControl();
+  }
+
+  document.getElementById('revealNowBtn').onclick = () => { clearTimer(); revealAnswer(); };
+
+  function revealAnswer(){
+    clearTimer();
+    document.getElementById('revealNowBtn').disabled = true;
+    state.phase = 'reveal_answer';
+    const correct = state.questions[state.qIndex].a;
+    pushFullState();
+    log('Réponse révélée : ' + correct);
+    setTimeout(() => startElimination(), 1800);
+  }
+
+  function startElimination(){
+    let wrong = [];
+    let correctLogins = [];
+    const exempt = state.exemptLogins || {};
+    const override = state.coinFlipOverride || {};
+    if (turnMode) {
+      const login = state.activeTurnLogin;
+      if (login && state.alive[login] && !exempt[login]) {
+        if (override[login] !== undefined) { if (override[login]) correctLogins.push(login); else wrong.push(login); }
+        else {
+          const given = state.currentAnswers[login];
+          if (given !== undefined && answerMatches(given, state.questions[state.qIndex].a)) correctLogins.push(login);
+          else wrong.push(login);
+        }
+      }
+    } else {
+      for (const login of Object.keys(state.alive)) {
+        if (exempt[login]) continue;
+        if (override[login] !== undefined) { if (override[login]) correctLogins.push(login); else wrong.push(login); continue; }
+        const given = state.currentAnswers[login];
+        if (given !== undefined && answerMatches(given, state.questions[state.qIndex].a)) correctLogins.push(login);
+        else wrong.push(login);
+      }
+      // Safety net: if literally everyone (non-exempt) got it wrong, nobody loses a life (only meaningful with 2+ players).
+      const evaluated = Object.keys(state.alive).filter(l => !exempt[l]);
+      if (evaluated.length > 1 && wrong.length === evaluated.length) {
+        log('Personne n\'a trouvé la bonne réponse : personne ne perd de vie, la partie continue.');
+        wrong = [];
+      }
+    }
+    if (state.pendingBet) state.pendingBet.targetCorrect = correctLogins.includes(state.pendingBet.targetLogin);
+    if (correctLogins.length) {
+      const mult = roundMultiplier();
+      correctLogins.forEach(login => {
+        addMoney(login, state.alive[login].name, 10 * mult, 'bonne réponse, manche x' + mult);
+        state.alive[login].streak = 0;
+      });
+    }
+    state.phase = 'reveal_eliminated';
+    const roster = Object.keys(state.alive).map(login => ({
+      login, name: state.alive[login].name, lives: state.alive[login].lives, maxLives: state.livesSetting
+    }));
+    pushFullState({ roster });
+    let i = 0;
+    const doublePenalty = state.doublePenalty || {};
+    function next(){
+      if (i >= wrong.length) { timerHandle = setTimeout(() => finishElimination(), 2000); return; }
+      const login = wrong[i];
+      const player = state.alive[login];
+      const hard = !!doublePenalty[login];
+      player.lives -= hard ? 2 : 1;
+      if (hard) { delete doublePenalty[login]; log(player.name + ' avait une question difficile : pénalité doublée !'); }
+      player.streak = (player.streak || 0) + 1;
+      const eliminated = player.lives <= 0;
+      sendToBroadcast({ type: 'life_lost', login, livesLeft: player.lives, eliminated });
+      log(player.name + (eliminated ? ' est éliminé(e) (0 vie restante).' : ' perd ' + (hard?2:1) + ' vie' + (hard?'s':'') + ' (' + player.lives + ' restante(s)).'));
+      if (eliminated) eliminatePlayer(login);
+      i++;
+      renderControl();
+      timerHandle = setTimeout(next, 900);
+    }
+    timerHandle = setTimeout(next, 1000);
+  }
+
+  function checkRoundOutcome(){
+    const aliveCount = Object.keys(state.alive).length;
+    if (state.isSoloRun) {
+      if (aliveCount === 0) {
+        const soloLogin = Object.keys(state.participants)[0];
+        const soloName = state.participants[soloLogin] || 'Joueur';
+        state.phase = 'winner';
+        lastWinner = soloName;
+        lastWinnerLogin = soloLogin;
+        log(soloName + ' termine sa partie solo.');
+        pushFullState({ winner: soloName, soloRun: true });
+        document.getElementById('startNextCountdownBtn').disabled = false;
+        renderControl();
+        if (autoMode) setTimeout(() => startNextCountdown(), WINNER_DISPLAY_MS);
+        return true;
+      }
+      return false;
+    }
+    if (aliveCount === 1) {
+      document.getElementById('declareWinnerBtn').disabled = false;
+      log('Un seul joueur reste : prêt à désigner le vainqueur.');
+      if (autoMode) setTimeout(() => declareWinner(), AUTO_PAUSE_MS);
+      return true;
+    } else if (aliveCount === 0) {
+      log('Plus aucun joueur en jeu.');
+      return true;
+    }
+    return false;
+  }
+
+  function finishElimination(){
+    if (turnMode && state.activeTurnLogin) {
+      const justPlayed = state.activeTurnLogin;
+      state.turnQueue = state.turnQueue.filter(l => l !== justPlayed);
+      if (state.alive[justPlayed]) state.turnQueue.push(justPlayed);
+      state.activeTurnLogin = null;
+    }
+    const roster = Object.keys(state.alive).map(login => ({
+      login, name: state.alive[login].name, lives: state.alive[login].lives, maxLives: state.livesSetting
+    }));
+    const survMult = roundMultiplier();
+    Object.keys(state.alive).forEach(login => addMoney(login, state.alive[login].name, 1 * survMult, 'survie au round, manche x' + survMult));
+    renderControl();
+    pushFullState({ roster });
+    if (state.pendingBet) { resolveBet(() => continueAfterRound()); return; }
+    continueAfterRound();
+  }
+
+  function continueAfterRound(){
+    if (checkRoundOutcome()) return;
+    if (state.qIndex + 1 < state.questions.length) {
+      document.getElementById('nextQuestionBtn').disabled = false;
+      if (autoMode) setTimeout(() => proceedToNextQuestion(), AUTO_PAUSE_MS);
+    } else {
+      log('Plus de questions restantes : choisis un vainqueur manuellement.');
+      const sel = document.getElementById('manualWinnerSelect');
+      sel.innerHTML = Object.values(state.alive).map(p => `<option>${p.name}</option>`).join('');
+      sel.style.display = 'inline-block';
+      document.getElementById('declareWinnerBtn').disabled = false;
+      if (autoMode) {
+        log('Mode auto : aucune question restante avec plusieurs joueurs, le premier de la liste est désigné vainqueur.');
+        setTimeout(() => declareWinner(), AUTO_PAUSE_MS);
+      }
+    }
+  }
+
+  document.getElementById('declareWinnerBtn').onclick = declareWinner;
+  function declareWinner(){
+    const aliveEntries = Object.entries(state.alive);
+    if (aliveEntries.length === 0) return;
+    const sel = document.getElementById('manualWinnerSelect');
+    let winnerLogin, winner;
+    if (sel.style.display !== 'none' && !autoMode) {
+      winner = sel.value;
+      const found = aliveEntries.find(([, p]) => p.name === winner);
+      winnerLogin = found ? found[0] : aliveEntries[0][0];
+      winner = found ? found[1].name : aliveEntries[0][1].name;
+    } else {
+      winnerLogin = aliveEntries[0][0];
+      winner = aliveEntries[0][1].name;
+    }
+    state.phase = 'winner';
+    lastWinner = winner;
+    lastWinnerLogin = winnerLogin;
+    pushFullState({ winner });
+    log('Vainqueur : ' + winner);
+    document.getElementById('declareWinnerBtn').disabled = true;
+    sel.style.display = 'none';
+    document.getElementById('startNextCountdownBtn').disabled = false;
+    renderControl();
+    if (autoMode) setTimeout(() => startNextCountdown(), WINNER_DISPLAY_MS);
+  }
+
+  document.getElementById('startNextCountdownBtn').onclick = startNextCountdown;
+  function startNextCountdown(){
+    state.qIndex = -1;
+    state.questions = shuffle(state.questions);
+    document.getElementById('startNextCountdownBtn').disabled = true;
+    const secs = parseInt(document.getElementById('nextGameSecs').value, 10) || 60;
+    log('Questions remélangées pour la prochaine partie.');
+    openInscriptions('next_countdown', secs);
+  }
+
+  function runCountdown(seconds, onTick, onDone){
+    clearTimer();
+    const endAt = Date.now() + seconds * 1000;
+    let lastShown = seconds;
+    onTick(seconds);
+    function tick(){
+      const remainingMs = endAt - Date.now();
+      const left = Math.max(0, Math.ceil(remainingMs / 1000));
+      if (left !== lastShown) { lastShown = left; onTick(left); }
+      if (remainingMs <= 0) { clearTimer(); onDone(); }
+    }
+    timerHandle = setInterval(tick, 250);
+  }
+  function clearTimer(){ if (timerHandle) { clearInterval(timerHandle); clearTimeout(timerHandle); timerHandle = null; } }
+
+  /* ---------- Control panel render ---------- */
+  function renderControl(){
+    document.getElementById('phaseBadge').textContent = state.phase;
+    document.getElementById('statJoined').textContent = Object.keys(state.participants).length;
+    document.getElementById('statAlive').textContent = Object.keys(state.alive).length;
+    document.getElementById('statAnswered').textContent = Object.keys(state.currentAnswers).length;
+    document.getElementById('statQIndex').textContent = state.qIndex >= 0 ? (state.qIndex+1) + '/' + state.questions.length : '–';
+
+    const jl = document.getElementById('joinedList');
+    jl.innerHTML = Object.values(state.participants).map(n => `<span class="pill">${n}</span>`).join('');
+
+    const box = document.getElementById('currentQuestionBox');
+    if (state.qIndex >= 0 && state.questions[state.qIndex]) {
+      box.style.display = 'block';
+      box.innerHTML = `<b>Q${state.qIndex+1}:</b> ${state.questions[state.qIndex].q} — <b>Réponse:</b> ${state.questions[state.qIndex].a}`;
+    } else {
+      box.style.display = 'none';
+    }
+
+    const lb = getLeaderboard();
+    const lbBox = document.getElementById('leaderboardBox');
+    lbBox.innerHTML = lb.length
+      ? lb.map((p, i) => `<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${p.name}</span><span class="lb-score">$${p.score}</span></div>`).join('')
+      : '<p class="help" style="margin:0;">Aucun joueur enregistré pour l\'instant.</p>';
+  }
+
+  renderControl();
+  if (loadCategoryBlocksFromStorage()) {
+    loadAllQuestions();
+    log('Catégories restaurées depuis ta dernière session et questions rechargées automatiquement.');
+  } else {
+    addCategoryBlock('Catégorie 1');
+  }
+  log('Panneau prêt. Charge tes questions, connecte-toi au chat, puis ouvre l\'écran de diffusion.');
+}
+</script>
+</body>
+</html>
